@@ -1,0 +1,27 @@
+var ops_8c =
+[
+    [ "file", "d7/d3a/structfile.html", "d7/d3a/structfile" ],
+    [ "dir", "d7/d28/structdir.html", "d7/d28/structdir" ],
+    [ "MAXDIRS", "d9/d70/ops_8c.html#af9b75816c5ad52134ac3945b79ce06d9", null ],
+    [ "MAXFILES", "d9/d70/ops_8c.html#a95988532bf766e92740c5ee869778e4d", null ],
+    [ "complete", "d9/d70/ops_8c.html#ab2fa56839b6f49e018f7e87295cbf246", null ],
+    [ "DECLPOOL", "d9/d70/ops_8c.html#a1719dc117b97c09fba9965ddd0066fe8", null ],
+    [ "DECLPOOL", "d9/d70/ops_8c.html#a001d65423609c4845c89da20b09aa358", null ],
+    [ "op_chdir", "d9/d70/ops_8c.html#a28b38bda4570915ab241b4042f5de316", null ],
+    [ "op_chdirup", "d9/d70/ops_8c.html#a2d0f0b69bac30d1078dbdfb6f7ac9763", null ],
+    [ "op_close", "d9/d70/ops_8c.html#a047e2346ff453a7db33a20c4d6cbfbae", null ],
+    [ "op_closedir", "d9/d70/ops_8c.html#a746753cbde2c3bbc3a2e57d7c5cdda95", null ],
+    [ "op_link", "d9/d70/ops_8c.html#a0ae60a1c8b8e0fbfd7dcfff952487166", null ],
+    [ "op_mkdir", "d9/d70/ops_8c.html#a96a660a680948ead395e3b6b46e16fad", null ],
+    [ "op_open", "d9/d70/ops_8c.html#a4d746069d14b557de5d983424a1c138b", null ],
+    [ "op_opendir", "d9/d70/ops_8c.html#a4c7f44fc5af370dd4108b52fd5539c86", null ],
+    [ "op_rename", "d9/d70/ops_8c.html#aa59a16b578af867e82ac5942123f8029", null ],
+    [ "op_renamexd", "d9/d70/ops_8c.html#a2cc6bb3741cc4a8346929ab547dcbdc4", null ],
+    [ "op_rmdir", "d9/d70/ops_8c.html#a3ac2c0b97fe44c720e5ad5c633a5cd40", null ],
+    [ "op_sync", "d9/d70/ops_8c.html#accddd2f12f9c09442efe28ed888f0997", null ],
+    [ "op_truncate", "d9/d70/ops_8c.html#a41fd71dc4e71db53dc43c503cfcde72b", null ],
+    [ "op_unlink", "d9/d70/ops_8c.html#aef620caf544fa6d9bf6aff311279ef71", null ],
+    [ "op_write", "d9/d70/ops_8c.html#ae57d331818ced6ff4a30f6c9910053b6", null ],
+    [ "setcheckmode", "d9/d70/ops_8c.html#a9f7d10e506b749bbf65cfd03c281c27c", null ],
+    [ "checkmode", "d9/d70/ops_8c.html#a7fd50cd25d45ab03d6a42a8e524e89c8", null ]
+];

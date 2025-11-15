@@ -1,0 +1,28 @@
+var dirseek_8c =
+[
+    [ "TESTDIR", "d2/d11/dirseek_8c.html#a79986b9e7f8277dc38782e1dc191c1ac", null ],
+    [ "cleanup", "d2/d11/dirseek_8c.html#a5c6551bf9ea9cf51ae7f2076c4cbe8ef", null ],
+    [ "closeit", "d2/d11/dirseek_8c.html#a61e459b74928b5050ac26e7051cbefae", null ],
+    [ "dobadreads", "d2/d11/dirseek_8c.html#af9eab9fe6040761a62feafbfae698f36", null ],
+    [ "doreadat0", "d2/d11/dirseek_8c.html#a72d7b183ee5f240031250bb8988a5be5", null ],
+    [ "doreadateof", "d2/d11/dirseek_8c.html#a7b9babae43286f052c0155a1d2a4501f", null ],
+    [ "doreadone", "d2/d11/dirseek_8c.html#aeba2d352dad758df88e85bfb8e6cbd92", null ],
+    [ "dotest", "d2/d11/dirseek_8c.html#adea08fb6363f0ba2eb9a67e647c87696", null ],
+    [ "findentry", "d2/d11/dirseek_8c.html#a952341e64b601885ab900c78ac4c3074", null ],
+    [ "firstread", "d2/d11/dirseek_8c.html#ac22a46ec89f4d1c3396ca59977d35a39", null ],
+    [ "inval_read", "d2/d11/dirseek_8c.html#a968614892ac7730f79d1f89ac087dbc1", null ],
+    [ "main", "d2/d11/dirseek_8c.html#a840291bc02cba5474a4cb46a9b9566fe", null ],
+    [ "mkfile", "d2/d11/dirseek_8c.html#a604a2cd99b3bf4ae5c861d52804d421f", null ],
+    [ "openit", "d2/d11/dirseek_8c.html#abea09725521905909ad8cf9b305c86f2", null ],
+    [ "readallonebyone", "d2/d11/dirseek_8c.html#a76996184a77954f286c01c24a21065cd", null ],
+    [ "readallrandomly", "d2/d11/dirseek_8c.html#aee8909f04d4f74deb331b5a6f032b573", null ],
+    [ "readateof", "d2/d11/dirseek_8c.html#ac0b1c0564a26670109e3985c56f4cef4", null ],
+    [ "readit", "d2/d11/dirseek_8c.html#ab1bcab28dbafb0d63d8108678f8c5c72", null ],
+    [ "readone", "d2/d11/dirseek_8c.html#a0ca3f8e8ab116606764060ddab1eba19", null ],
+    [ "setup", "d2/d11/dirseek_8c.html#a635bebcf1bdfa7de6f25c21a01451d64", null ],
+    [ "dirfd", "d2/d11/dirseek_8c.html#a16ef4b487561db816ab1c4be581b92d7", null ],
+    [ "make_it", "d2/d11/dirseek_8c.html#a1d8974de31190f0be78922c54aed34b5", null ],
+    [ "name", "d2/d11/dirseek_8c.html#a8f8f80d37794cde9472343e4487ba3eb", null ],
+    [ "pos", "d2/d11/dirseek_8c.html#a320b91e58d067b5097a431e6da94f247", null ],
+    [ "testfiles", "d2/d11/dirseek_8c.html#a510d900db22b8a1e2073c7a598a3f86d", null ]
+];

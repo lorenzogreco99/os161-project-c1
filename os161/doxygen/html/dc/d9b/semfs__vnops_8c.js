@@ -1,0 +1,28 @@
+var semfs__vnops_8c =
+[
+    [ "semfs_creat", "dc/d9b/semfs__vnops_8c.html#a87b93a23f6ef330fbadf19ae0dac4dd6", null ],
+    [ "semfs_dirstat", "dc/d9b/semfs__vnops_8c.html#a32e664059c8321fbe42d6616fd6f84eb", null ],
+    [ "semfs_eachopen", "dc/d9b/semfs__vnops_8c.html#a3d69ff5503faab5bcf6e69112fc3579a", null ],
+    [ "semfs_fsync", "dc/d9b/semfs__vnops_8c.html#a577cbd135cee3268d51fb63e3ea4a815", null ],
+    [ "semfs_getdirentry", "dc/d9b/semfs__vnops_8c.html#ac046caecb54be54344ecc4681b2c7cee", null ],
+    [ "semfs_getsem", "dc/d9b/semfs__vnops_8c.html#a33850bfd42181742fe40701f3b6dd5ec", null ],
+    [ "semfs_getsembynum", "dc/d9b/semfs__vnops_8c.html#a9f73167fa3da736efd095ec88b99c095", null ],
+    [ "semfs_gettype", "dc/d9b/semfs__vnops_8c.html#a5d2da24035458534d8b53adaaee12795", null ],
+    [ "semfs_getvnode", "dc/d9b/semfs__vnops_8c.html#a29862b5a6ffc7a46a0cefdcb5a7e40dd", null ],
+    [ "semfs_ioctl", "dc/d9b/semfs__vnops_8c.html#a8bb0713e885b1c7095f670e5d249de96", null ],
+    [ "semfs_isseekable", "dc/d9b/semfs__vnops_8c.html#aea91d8dda24c4887b1804f0374c2d9f3", null ],
+    [ "semfs_lookparent", "dc/d9b/semfs__vnops_8c.html#afe3de2510bc5118a5c104f1633fe7f9d", null ],
+    [ "semfs_lookup", "dc/d9b/semfs__vnops_8c.html#aaeba9acf973aedab87f5a6dd50d88812", null ],
+    [ "semfs_namefile", "dc/d9b/semfs__vnops_8c.html#ad1bf2d095d998a94e43bed77ecb4d4b0", null ],
+    [ "semfs_read", "dc/d9b/semfs__vnops_8c.html#a173f881b12dbf31e86fcc5333ec8147a", null ],
+    [ "semfs_reclaim", "dc/d9b/semfs__vnops_8c.html#a5726c97bbad11f0ab559d6b7b312169b", null ],
+    [ "semfs_remove", "dc/d9b/semfs__vnops_8c.html#a985a06190010a6cb1ca57af05504e5eb", null ],
+    [ "semfs_semstat", "dc/d9b/semfs__vnops_8c.html#ae134460b64e86abde22c46b65d58ef41", null ],
+    [ "semfs_truncate", "dc/d9b/semfs__vnops_8c.html#af6215f0e41fce6588f3290355b067fbf", null ],
+    [ "semfs_vnode_create", "dc/d9b/semfs__vnops_8c.html#af2f95278c33751715a1f52b4727be1fc", null ],
+    [ "semfs_vnode_destroy", "dc/d9b/semfs__vnops_8c.html#a7baedc26811e938da6598878d87c954a", null ],
+    [ "semfs_wakeup", "dc/d9b/semfs__vnops_8c.html#a78fd5ff148895c629c96c6ff3035df89", null ],
+    [ "semfs_write", "dc/d9b/semfs__vnops_8c.html#af5266d4150db69a336c9db99d67ea870", null ],
+    [ "semfs_dirops", "dc/d9b/semfs__vnops_8c.html#a337fa8f19a3768eeae62bed3bb5bc67e", null ],
+    [ "semfs_semops", "dc/d9b/semfs__vnops_8c.html#a65a19063d399042796fbbdf30d1ecd80", null ]
+];
