@@ -1,2 +1,0 @@
-itable.o: itable.c itable.h
-itable.h:
