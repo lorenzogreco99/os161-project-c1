@@ -20,14 +20,14 @@ static unsigned long *allocSize = NULL;
 /*NOTE: we can use a bitmap as well, this is just an initial implementation */
 static unsigned char *freeRamFrames = NULL;
 
-char coremapActive = 0;
+bool coremapActive = false;
 
 /**
  * @brief checks if the coremap is active
  * @return 1 if the coremap is active, otherwise 0
  */
-static int isCoremapActive () {
-  int active;
+static bool isCoremapActive () {
+  bool active;
   spinlock_acquire(&freemem_lock);      //enters in a critical section while guarateing mutual exclusion
   active = coremapActive;               //reads the protected value inside the critical section -> the copied value is atomic, coerent adn protected.
   spinlock_release(&freemem_lock);      //exits
@@ -53,11 +53,11 @@ void coremap_init(){
     }
 
     for (int i=0; i<RamFramesNumber; i++) {    
-        freeRamFrames[i] = (unsigned char)0;
+        freeRamFrames[i] = (unsigned char)1;
         allocSize[i] = 0;  
     }
     spinlock_acquire(&freemem_lock);
-    coremapActive = 1;
+    coremapActive = true;
     spinlock_release(&freemem_lock);
 
 };
@@ -68,7 +68,7 @@ void coremap_init(){
 void coremap_destroy(){
     
     spinlock_acquire(&freemem_lock);
-    coremapActive = 0;
+    coremapActive = false;
     spinlock_release(&freemem_lock);
     
     kfree(freeRamFrames);
@@ -76,13 +76,11 @@ void coremap_destroy(){
 }
 
 /**
- * @brief get npages free pages.
- * 
- * @param npages number of pages needed.
- * @return paddr_t the starting physical address.
+ * @brief looks for free frames in the coremap. It only works if the coremap has free frames.
+ * @param npages: # of pages needed.
+ * @return paddr_t: starting physical address.
  */
-static paddr_t 
-getfreeppages(unsigned long npages) {
+static paddr_t getFreePages(unsigned long npages) {
   paddr_t addr;	
   long i, first, found, np = (long)npages;
 
@@ -117,35 +115,48 @@ getfreeppages(unsigned long npages) {
   return addr;
 }
 
+static void freePages(paddr_t firstpaddr, unsigned long npages){
+  unsigned long first = firstpaddr / PAGE_SIZE;
+
+  spinlock_acquire(&freemem_lock);
+  KASSERT(allocSize != NULL);
+  KASSERT(first < (unsigned long)RamFramesNumber);
+  KASSERT(npages > 0);
+  KASSERT(first + npages <= (unsigned long)RamFramesNumber);
+
+  for (unsigned long i = first; i < first + npages; i++) {
+    KASSERT(i < (unsigned long)RamFramesNumber);
+    KASSERT(freeRamFrames[i] == 0); 
+    freeRamFrames[i] = (unsigned char)1;
+  }
+
+  allocSize[first] = 0;
+
+  spinlock_release(&freemem_lock);
+}
+
 /**
- * @brief get npages free pages. if there are not enogugh free pages it will 
- * steal memory from the ram.
- * 
- * please note that is is only called by the kernel, since the user can only allocate
- * one page at a time.
- * 
- * @param npages number of pages needed.
- * @return paddr_t the starting physical address.
+ * @brief gets n free pages. If there are not enogugh in the coremap it steals memory from the RAM (ram_stealmem).
+ * @details only called by the kernel: the user can only allocate one page at a time.
+ * @param npages:  # of pages needed.
+ * @return starting physical address.
  */
-static paddr_t
-getppages(unsigned long npages)
+static paddr_t getPages(unsigned long npages)
 {
   paddr_t addr;
 
-  /* try freed pages first */
-  addr = getfreeppages(npages);
-  if (addr == 0) {
-    /* call stealmem */
+  if (!isCoremapActive()) {
+    /* bootstrap: I still don't have the coremap*/
     spinlock_acquire(&stealmem_lock);   //global spinlock defined by OS161 to protect ram_stealmem
     addr = ram_stealmem(npages);
     spinlock_release(&stealmem_lock);
+    return addr;
   }
-  if (addr!=0 && isCoremapActive()) {
-    spinlock_acquire(&freemem_lock);
-    allocSize[addr/PAGE_SIZE] = npages;
-    spinlock_release(&freemem_lock);
-  } 
 
+  //coremap already active: I only use it
+  addr = getFreePages(npages);
+
+  //IF addr = 0 here it means I don't have any free frames no more.
   return addr;
 }
 
@@ -156,13 +167,11 @@ getppages(unsigned long npages)
  * @param npages 
  * @return vaddr_t 
  */
-vaddr_t
-alloc_kpages(unsigned npages)
-{
+vaddr_t alloc_kpages(unsigned npages) {
 	paddr_t pa;
 
 	dumbvm_can_sleep();
-	pa = getppages(npages);
+	pa = getPages(npages);
 	if (pa==0) {
 		return 0;
 	}
@@ -174,36 +183,35 @@ alloc_kpages(unsigned npages)
  * 
  * @param addr 
  */
-void 
-free_kpages(vaddr_t addr){
+void free_kpages(vaddr_t addr){
   if (isCoremapActive()) {
     paddr_t paddr = addr - MIPS_KSEG0;
     long first = paddr/PAGE_SIZE;	
     KASSERT(allocSize!=NULL);
     KASSERT(RamFramesNumber>first);
-    freeppages(paddr, allocSize[first]);	
+    freePages(paddr, allocSize[first]);	
   }
 }
 
 /**
- * @brief allocate a page for the user. 
- * It is different from the alloc_kpage as it allocate one frame at a time and
- * has to manage the victim selection.
- * 
- * @return vaddr_t the virtual address of the allocated frame
+ * @brief allocate a page for the user. Allocate ONE frame at a time and
+ * has to manage the victim selection <- different from KP
+ * @return virtual address of the allocated frame
  */
-paddr_t 
-alloc_upage(){
-    //TODO manage the case in which there are no free frames with swapping.
+paddr_t  allocUPage(){
+    //TODO: manage the case in which there are no free frames with swapping.
     dumbvm_cansleep();
-    return getppages(1);
+    return getPages(1);
 }
 
 /**
- * @brief deallocate the given page for the user.
- * 
- * @param addr 
+ * @brief deallocate the given page for the user: set at 1
+ * @param addr
  */
-void free_upage(vaddr_t addr){
-    getfreeppages(1);
+void freeUPage(paddr_t addr){
+  if (isCoremapActive()) {
+    int first = addr / PAGE_SIZE;
+    int npages = allocSize[first];
+    freePages(addr, npages);
+  }
 };

@@ -106,7 +106,7 @@ boot(void)
 	kprintf("%s", harvard_copyright);
 	kprintf("\n");
 
-	kprintf("Put-your-group-name-here's system version %s (%s #%d)\n",
+	kprintf("Group LLL's system version %s (%s #%d)\n",
 		GROUP_VERSION, buildconfig, buildversion);
 	kprintf("\n");
 
@@ -218,6 +218,12 @@ kmain(char *arguments)
 #if OPT_HELLO2
 	hello();
 #endif
+
+	vaddr_t t = alloc_kpages(3);
+	kprintf("Allocated 3 pages at: %p\n", (void*)t);
+
+	free_kpages(t);
+	kprintf("Freed them.\n");
 
 #if OPT_HELLO
 	hello_func();
