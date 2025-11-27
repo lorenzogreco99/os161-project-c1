@@ -262,6 +262,8 @@ defdevice       random                  dev/generic/random.c
 # expect to find is machine-dependent.)
 #
 
+defoption DEMAND_PAGING
+
 include   arch/mips/conf/conf.arch
 include   arch/sys161/conf/conf.arch
 
@@ -341,12 +343,8 @@ file      proc/proc.c
 #
 
 file      vm/kmalloc.c
-
 optofffile dumbvm   vm/addrspace.c
 
-#NEW: system VM for TLB
-defoption DEMAND_PAGING
-optfile   DEMAND_PAGING vm/demand_paging.c
 
 #
 # Network
