@@ -215,19 +215,11 @@ kmain(char *arguments)
 {
 	boot();
 
-#if OPT_HELLO2
-	hello();
-#endif
-
 	vaddr_t t = alloc_kpages(3);
 	kprintf("Allocated 3 pages at: %p\n", (void*)t);
 
 	free_kpages(t);
 	kprintf("Freed them.\n");
-
-#if OPT_HELLO
-	hello_func();
-#endif
 
 	menu(arguments);
 

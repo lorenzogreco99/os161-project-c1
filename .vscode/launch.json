@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/lisagiacob/Desktop/Shared/os161-project-c1/os161-base-2.0.3/kern/main",
+      "program": "/Users/lisagiacob/Desktop/Shared/os161-project-c1/os161-base-2.0.3/kern/main/build/Debug/outDebug"
+    }
+  ]
+}
