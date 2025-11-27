@@ -30,9 +30,7 @@ options semfs			# Semaphores for userland
 options sfs			# Always use the file system
 #options netfs			# You might write this as a project.
 
-options dumbvm			# Chewing gum and baling wire.
+#options dumbvm			# Chewing gum and baling wire.
 
 # For when we will have a VM configured
-#defoption DEMAND_PAGING
-#optfile DEMAND_PAGING vm/demand_paging.c     # o come si chiama il tuo file
-#optofffile DEMAND_PAGING vm/dumbvm.c         # opzionale ma consigliato
+options DEMAND_PAGING		# Use the new VM with DP

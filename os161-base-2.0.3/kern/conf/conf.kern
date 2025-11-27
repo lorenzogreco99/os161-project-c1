@@ -344,6 +344,10 @@ file      vm/kmalloc.c
 
 optofffile dumbvm   vm/addrspace.c
 
+#NEW: system VM for TLB
+defoption DEMAND_PAGING
+optfile   DEMAND_PAGING vm/demand_paging.c
+
 #
 # Network
 # (nothing here yet)
@@ -383,6 +387,8 @@ file      syscall/time_syscalls.c
 defoption syscalls
 optfile   syscalls syscall/file_syscall.c
 optfile   syscalls syscall/proc_syscall.c
+
+
 
 #
 # Startup and initialization
