@@ -264,8 +264,9 @@ defdevice       random                  dev/generic/random.c
 
 defoption DEMAND_PAGING
 optfile   DEMAND_PAGING    vm/vm_tlb.c
-optfile   DEMAND_PAGING    vm/vm.c
+optfile   DEMAND_PAGING    vm/demand_paging.c
 optfile   DEMAND_PAGING    vm/swapfile.c
+optfile   DEMAND_PAGING    vm/coremap.c
 
 include   arch/mips/conf/conf.arch
 include   arch/sys161/conf/conf.arch
