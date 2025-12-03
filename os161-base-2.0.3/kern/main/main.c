@@ -56,6 +56,11 @@
 
 #include "hello.h"
 
+#include "opt-DEMAND_PAGING.h"
+#if OPT_DEMAND_PAGING
+#include <coremap.h>
+#endif
+
 
 /*
  * These two pieces of data are maintained by the makefiles and build system.
@@ -111,7 +116,11 @@ boot(void)
 	kprintf("\n");
 
 	/* Early initialization. */
+ #if DEMAND_PAGING
+ 	coremap_bootstrap();
+ #else
 	ram_bootstrap();
+ #endif
 	proc_bootstrap();
 	thread_bootstrap();
 	hardclock_bootstrap();

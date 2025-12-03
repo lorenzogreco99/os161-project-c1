@@ -33,6 +33,8 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <proc.h>
+#include <vm_tlb.h>
+
 
 /*
  * Note! If OPT_DUMBVM is set, as is the case until you start the VM
@@ -43,18 +45,17 @@
 struct addrspace *
 as_create(void)
 {
-	struct addrspace *as;
+    struct addrspace *as = kmalloc(sizeof(struct addrspace));
+    if (as == NULL) {
+        return NULL;
+    }
 
-	as = kmalloc(sizeof(struct addrspace));
-	if (as == NULL) {
-		return NULL;
-	}
+    // per ora niente regioni: le aggiungerai quando implementi as_define_region
+    as->pt_entries  = NULL;
+    as->pt_nentries = 0;
+    as->pt_capacity = 0;
 
-	/*
-	 * Initialize as needed.
-	 */
-
-	return as;
+    return as;
 }
 
 int
@@ -77,14 +78,19 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 	return 0;
 }
 
+
 void
 as_destroy(struct addrspace *as)
 {
-	/*
-	 * Clean up as needed.
-	 */
+    if (as == NULL) {
+        return;
+    }
 
-	kfree(as);
+    if (as->pt_entries != NULL) {
+        kfree(as->pt_entries);
+    }
+
+    kfree(as);
 }
 
 void
@@ -101,9 +107,7 @@ as_activate(void)
 		return;
 	}
 
-	/*
-	 * Write this.
-	 */
+	tlb_invalidates();
 }
 
 void

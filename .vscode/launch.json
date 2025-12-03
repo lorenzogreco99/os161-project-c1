@@ -6,8 +6,8 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/lisagiacob/Desktop/Shared/os161-project-c1/os161-base-2.0.3/kern/main",
-      "program": "/Users/lisagiacob/Desktop/Shared/os161-project-c1/os161-base-2.0.3/kern/main/build/Debug/outDebug"
+      "cwd": "/Users/lisagiacob/Desktop/Shared/os161-project-c1/os161-base-2.0.3/kern/arch/mips/vm",
+      "program": "/Users/lisagiacob/Desktop/Shared/os161-project-c1/os161-base-2.0.3/kern/arch/mips/vm/build/Release/outRelease"
     }
   ]
 }
