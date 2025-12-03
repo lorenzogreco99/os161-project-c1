@@ -26,6 +26,24 @@ struct vnode;
 
 struct pt_entry;  // forward declaration, definita in pt.h
 
+#if !OPT_DUMBVM
+
+/* Numero massimo di regioni per address space:
+ * tipicamente: text, data+bss, (eventuale heap), stack.
+ * Se vuoi puoi aumentarlo più avanti.
+ */
+#define AS_MAXREGIONS 4
+
+struct region {
+        vaddr_t vbase;   /* base virtuale allineata a pagina */
+        size_t  npages;  /* numero di pagine nella regione    */
+        /* in futuro potresti aggiungere permessi:
+         * int readable, writeable, executable;
+         */
+};
+
+#endif
+
 struct addrspace {
 #if OPT_DUMBVM
         vaddr_t as_vbase1;
@@ -36,10 +54,14 @@ struct addrspace {
         size_t  as_npages2;
         paddr_t as_stackpbase;
 #else
+        /* Page table dinamica */
         struct pt_entry *pt_entries;
-        unsigned pt_nentries;
-        unsigned pt_capacity;
-        /* in futuro: lista delle regioni, permessi, ecc. */
+        unsigned         pt_nentries;
+        unsigned         pt_capacity;
+
+        /* Region table semplice */
+        struct region    regions[AS_MAXREGIONS];
+        unsigned         nregions;
 #endif
 };
 

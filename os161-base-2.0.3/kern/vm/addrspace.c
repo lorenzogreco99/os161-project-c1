@@ -42,55 +42,79 @@
  * used. The cheesy hack versions in dumbvm.c are used instead.
  */
 
-struct addrspace *
-as_create(void)
-{
-    struct addrspace *as = kmalloc(sizeof(struct addrspace));
-    if (as == NULL) {
-        return NULL;
-    }
-
-    // per ora niente regioni: le aggiungerai quando implementi as_define_region
-    as->pt_entries  = NULL;
-    as->pt_nentries = 0;
-    as->pt_capacity = 0;
-
-    return as;
-}
-
 int
 as_copy(struct addrspace *old, struct addrspace **ret)
 {
-	struct addrspace *newas;
-
-	newas = as_create();
-	if (newas==NULL) {
-		return ENOMEM;
-	}
-
-	/*
-	 * Write this.
-	 */
-
-	(void)old;
-
-	*ret = newas;
-	return 0;
+#if OPT_DUMBVM
+    /* qui puoi tenere l’implementazione originale se vuoi supportare fork con dumbvm */
+    panic("as_copy: DUMBVM non usato con questo progetto\n");
+    (void)old;
+    (void)ret;
+    return ENOSYS;
+#else
+    (void)old;
+    *ret = NULL;
+    return ENOSYS;   /* fork fallisce in modo esplicito */
+#endif
 }
+
+
+#if OPT_DUMBVM
+
+/*
+ * Note! If OPT_DUMBVM is set, as is the case, this file should not be compiled or linked or in any way used.
+ */
+
+#error "addrspace.c compiled even though OPT_DUMBVM is set; check your config"
+
+
+#else  /* !OPT_DUMBVM: NOSTRA VERSIONE DEMAND PAGING -------------------- */
+
+
+struct addrspace *
+as_create(void)
+{
+        struct addrspace *as;
+
+        as = kmalloc(sizeof(struct addrspace));
+        if (as == NULL) {
+                return NULL;
+        }	
+
+        /* Page table inizialmente vuota */
+        as->pt_entries  = NULL;
+        as->pt_nentries = 0;
+        as->pt_capacity = 0;
+
+        /* Nessuna regione definita */
+        as->nregions = 0;
+        for (unsigned i = 0; i < AS_MAXREGIONS; i++) {
+                as->regions[i].vbase  = 0;
+                as->regions[i].npages = 0;
+        }	
+
+        return as;
+}	
 
 
 void
 as_destroy(struct addrspace *as)
 {
-    if (as == NULL) {
-        return;
-    }
+        if (as == NULL) {
+                return;
+        }
 
-    if (as->pt_entries != NULL) {
-        kfree(as->pt_entries);
-    }
+        /* TODO in futuro:
+         * - per ogni pt_entry IN_MEMORY, liberare i frame fisici via coremap
+         *   (coremap_freeppages ecc.)
+         * Per ora ci limitiamo a liberare solo la struttura dati.
+         */
 
-    kfree(as);
+        if (as->pt_entries != NULL) {
+                kfree(as->pt_entries);
+        }
+
+        kfree(as);
 }
 
 void
@@ -131,21 +155,42 @@ as_deactivate(void)
  * want to implement them.
  */
 int
-as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
-		 int readable, int writeable, int executable)
+as_define_region(struct addrspace *as,
+                 vaddr_t vaddr, size_t sz,
+                 int readable,
+                 int writeable,
+                 int executable)
 {
-	/*
-	 * Write this.
-	 */
+        (void)readable;
+        (void)writeable;
+        (void)executable;
+        /* Per ora ignoriamo i permessi – puoi aggiungerli nella struct region
+         * se vuoi gestire anche i bit R/W/X.
+         */
 
-	(void)as;
-	(void)vaddr;
-	(void)memsize;
-	(void)readable;
-	(void)writeable;
-	(void)executable;
-	return ENOSYS;
+        /* 1. Allinea base e size a PAGE_SIZE */
+
+        vaddr_t vbase = vaddr & PAGE_FRAME;  /* arrotonda vaddr verso il basso */
+
+        size_t offset = vaddr - vbase;
+        sz += offset;
+
+        /* numero di pagine necessarie, arrotondato per eccesso */
+        size_t npages = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+
+        /* 2. Controlla se abbiamo spazio per un’altra regione */
+        if (as->nregions >= AS_MAXREGIONS) {
+                return EFAULT;
+        }
+
+        unsigned idx = as->nregions++;
+
+        as->regions[idx].vbase  = vbase;
+        as->regions[idx].npages = npages;
+
+        return 0;
 }
+
 
 int
 as_prepare_load(struct addrspace *as)
@@ -184,3 +229,4 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	return 0;
 }
 
+#endif /* !OPT_DUMBVM */

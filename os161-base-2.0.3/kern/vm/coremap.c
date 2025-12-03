@@ -225,7 +225,7 @@ paddr_t
 coremap_getppages(int npages, struct pt_entry *ptentry)
 {
   int i;
-  int end = 0;
+  
   int beginning = -1;
 
   spinlock_acquire(&cm_spinlock);

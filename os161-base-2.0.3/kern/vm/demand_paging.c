@@ -125,12 +125,25 @@ alloc_kpages(unsigned npages)
 	return PADDR_TO_KVADDR(pa);
 }
 
+/**
+ * @brief free the allocated pages starting from addr
+ * @param addr 
+ */
+static 
+void
+freeppages(paddr_t addr){
+	spinlock_acquire(&stealmem_lock);
+	coremap_freeppages(addr);
+	spinlock_release(&stealmem_lock);
+} 
+
 void
 free_kpages(vaddr_t addr)
 {
-	/* nothing - leak the memory. */
-
-	(void)addr;
+	paddr_t pa = addr - MIPS_KSEG0;
+	spinlock_acquire(&stealmem_lock);
+	freeppages(pa);
+	spinlock_release(&stealmem_lock);
 }
 
 void
