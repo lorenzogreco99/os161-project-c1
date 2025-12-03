@@ -13,10 +13,12 @@
 #include <vfs.h>
 #include <vm.h>
 #include <vnode.h>
+#include <spinlock.h>
 
 static struct vnode *swapfile;
 static struct bitmap *swapmap;
 static bool swap_active = false;
+static struct spinlock swap_lock;
 
 // TODO: spinlock
 
@@ -24,6 +26,8 @@ void swap_init(void)
 {
     int err;
     char swapfile_name[16];
+
+    spinlock_init(&swap_lock);
 
     KASSERT(SWAPFILE_SIZE % PAGE_SIZE == 0);
 
@@ -35,6 +39,9 @@ void swap_init(void)
     }
 
     swapmap = bitmap_create(SWAPFILE_SIZE / PAGE_SIZE);
+    if (swapmap == NULL) {
+        panic("swap_init: cannot create bitmap\n");
+    }
 
     swap_active = true;
 }
@@ -51,14 +58,20 @@ void swap_in(paddr_t page_paddr, unsigned int swap_index)
     KASSERT(swap_index < SWAPFILE_SIZE / PAGE_SIZE);
     KASSERT(bitmap_isset(swapmap, swap_index));
 
+    spinlock_acquire(&swap_lock);
+
     swap_offset = swap_index * PAGE_SIZE;
 
     uio_kinit(&iov, &ku, (void *)PADDR_TO_KVADDR(page_paddr), PAGE_SIZE, swap_offset, UIO_READ);
     err = VOP_READ(swapfile, &ku);
-    if (err)
-    {
+    if (err) {
         panic("Error swapping in\n");
     }
+    if (ku.uio_resid != 0) {
+        panic("swap_in: short read\n");
+    }
+
+    spinlock_release(&swap_lock);
 
     bitmap_unmark(swapmap, swap_index);
 }
@@ -74,6 +87,7 @@ unsigned int swap_out(paddr_t page_paddr)
     KASSERT(swap_active);
     KASSERT(page_paddr % PAGE_SIZE == 0);
 
+    spinlock_acquire(&swap_lock);
     err = bitmap_alloc(swapmap, &swap_index);
     if (err)
     {
@@ -84,10 +98,14 @@ unsigned int swap_out(paddr_t page_paddr)
 
     uio_kinit(&iov, &ku, (void *)PADDR_TO_KVADDR(page_paddr), PAGE_SIZE, swap_offset, UIO_WRITE);
     err = VOP_WRITE(swapfile, &ku);
-    if (err)
-    {
+    if (err) {
         panic("Error swapping out\n");
     }
+    if (ku.uio_resid != 0) {
+        panic("swap_out: short write\n");
+    }
+
+    spinlock_release(&swap_lock);
 
     return swap_index;
 }

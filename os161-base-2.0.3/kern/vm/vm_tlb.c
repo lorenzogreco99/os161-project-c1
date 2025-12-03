@@ -52,11 +52,30 @@ void tlb_inserts(vaddr_t vaddr, paddr_t paddr, bool ro)
     splx(spl);
 }
 
-void tlb_remove(vaddr_t vaddr)
+void
+tlb_remove_by_paddr(paddr_t paddr)
 {
-    int index;
+    (void)paddr;
+    /*
+     * Versione semplice: per adesso non cerchiamo la singola entry,
+     * ma invalidiamo tutte le entry del TLB.
+     * È meno efficiente, ma molto più semplice e va benissimo.
+     */
+    tlb_invalidates();
+}
 
-    index = tlb_probe(vaddr, 0);
-    if (index >= 0)
-        tlb_write(TLBHI_INVALID(index), TLBLO_INVALID(), index);
+void
+tlb_remove_entry(vaddr_t vaddr)
+{
+    int spl = splhigh();
+    uint32_t ehi, elo;
+
+    for (int i = 0; i < NUM_TLB; i++) {
+        tlb_read(&ehi, &elo, i);
+        if ((elo & TLBLO_VALID) && (ehi & PAGE_FRAME) == (vaddr & PAGE_FRAME)) {
+            tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+        }
+    }
+
+    splx(spl);
 }

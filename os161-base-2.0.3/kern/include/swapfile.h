@@ -2,8 +2,9 @@
 #define _SWAPFILE_H_
 
 #include <types.h>
+#include <vm.h>
 
-#define SWAPFILE_SIZE 9 * 1024 * 1024
+#define SWAPFILE_SIZE (9 * 1024 * 1024)
 #define SWAPFILE_NAME "emu0:/SWAPFILE"
 
 void swap_init(void);

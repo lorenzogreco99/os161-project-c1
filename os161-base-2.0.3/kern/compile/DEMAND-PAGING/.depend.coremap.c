@@ -5,4 +5,5 @@ coremap.o: ../../vm/coremap.c ../../include/types.h \
  opt-noasserts.h ../../include/coremap.h ../../include/pt.h \
  ../../include/mainbus.h ../../include/vm_tlb.h ../../include/synch.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
- includelinks/machine/spinlock.h ../../include/addrspace.h opt-dumbvm.h
+ includelinks/machine/spinlock.h ../../include/addrspace.h opt-dumbvm.h \
+ ../../include/swapfile.h

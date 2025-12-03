@@ -14,6 +14,7 @@
 #include <vm_tlb.h>
 #include <synch.h>
 #include <addrspace.h>
+#include <swapfile.h>
 //#include "opt-swap.h"
 //#include "opt-noswap_rdonly.h"
 
@@ -22,13 +23,10 @@ vaddr_t firstfree; /* first free virtual address; set by start.S */
 struct spinlock cm_spinlock = SPINLOCK_INITIALIZER;
 
 static int        coremap_find_freeframes(int npages);
-#if OPT_SWAP
-static int        coremap_get_victim();
-static int        coremap_swapout(int npages);
-static int        victim_index = 0;
-#endif
+
 static int        nRamFrames = 0; /* number of ram frames */
 static struct     coremap_entry *coremap;
+static unsigned   cm_rr_hand = 0;   /* indice corrente del RR nella coremap */
 
 /**
  * @brief Initialization of the coremap, this function is called 
@@ -136,84 +134,7 @@ coremap_find_freeframes(int npages)
   return beginning;
 }
 
-#if OPT_SWAP
-/**
- * @brief Find a swappable victim.
- * 
- * @return index of the swappable page, -1 if not found.
- */
-static int
-coremap_get_victim()
-{
-  int i;
 
-  for(i=0; i<nRamFrames; i++)
-  {
-    victim_index = (victim_index + 1) % nRamFrames;
-
-    /* Swap out only user pages */
-    if(coremap[victim_index].cm_ptentry != NULL && !coremap[victim_index].cm_lock)
-    {
-      KASSERT(coremap[victim_index].cm_used == 1);
-      KASSERT(coremap[victim_index].cm_allocsize == 1);
-
-      return victim_index;
-    }
-  }
-
-  return -1;
-}
-
-/**
- * @brief swap out pages from memory.
- * 
- * @param npages
- * @return index of the frame swapped out.
- */
-static int
-coremap_swapout(int npages)
-{
-  int victim_index;
-  int swap_index;
-
-  if(npages > 1)
-  {
-    panic("Cannot swap out multiple pages");
-  }
-
-  victim_index = coremap_get_victim();
-  if(victim_index == -1)
-  {
-    panic("Cannot find swappable victim");
-  }
-
-#if OPT_NOSWAP_RDONLY
-  if(coremap[victim_index].cm_ptentry->pt_status == IN_MEMORY_RDONLY){
-    pt_set_entry(coremap[victim_index].cm_ptentry,0,0,NOT_LOADED);
-    tlb_remove_by_paddr(victim_index * PAGE_SIZE);
-    return victim_index;
-  }
-#endif
-
-  /* lock the frame while swapping out */
-
-  coremap[victim_index].cm_lock = 1;
-  spinlock_release(&cm_spinlock);
-  swap_index = swap_out(victim_index * PAGE_SIZE);
-  spinlock_acquire(&cm_spinlock);
-  coremap[victim_index].cm_lock = 0;
-
-  /* appena scritto su swap: la copia in RAM non è più “sporco da scrivere” */
-  coremap[victim_index].cm_dirty   = false;
-  coremap[victim_index].cm_in_swap = true;
-
-  /* update page table */
-  pt_set_entry(coremap[victim_index].cm_ptentry, 0, swap_index, IN_SWAP);
-  tlb_remove_by_paddr(victim_index * PAGE_SIZE);
-
-  return victim_indexz;
-}
-#endif
 
 /**
  * @brief allocate npages pages and return the physical address of the first one.
@@ -230,19 +151,20 @@ coremap_getppages(int npages, struct pt_entry *ptentry)
 
   spinlock_acquire(&cm_spinlock);
   beginning = coremap_find_freeframes(npages);
-  if (beginning == -1)
-  {
-#if OPT_SWAP
-    beginning = coremap_swapout(npages);
-    if (beginning == -1)
-    {
+
+  if (beginning == -1) {
+  #if OPT_SWAP
+      if (npages != 1) {
+          panic("coremap_getppages: cannot evict multi-page allocation\n");
+      }
+
+      paddr_t victim_paddr = evict_page();
+      /* Ricava l’indice del frame dalla paddr */
+      beginning = (int)(victim_paddr / PAGE_SIZE);
+  #else
       spinlock_release(&cm_spinlock);
       return 0;
-    }
-#else
-    spinlock_release(&cm_spinlock);
-    return 0;
-#endif
+  #endif
   }
 
 
@@ -292,4 +214,68 @@ void coremap_freeppages(paddr_t addr)
       coremap[first + i].cm_in_swap = false;   // lo stato swap è della pagina, non del frame
   }
   spinlock_release(&cm_spinlock);
+}
+
+paddr_t
+evict_page(void)
+{
+    unsigned scanned = 0;
+
+    while (scanned < (unsigned)nRamFrames) {
+        unsigned i = cm_rr_hand;
+        cm_rr_hand = (cm_rr_hand + 1) % (unsigned)nRamFrames;
+        scanned++;
+
+        struct coremap_entry *cme = &coremap[i];
+
+        /* Skip: frame libero, kernel, lockato */
+        if (!cme->cm_used)  continue;
+        if (cme->cm_kernel) continue;
+        if (cme->cm_lock)   continue;
+
+        /* Vittima trovata */
+        struct pt_entry *pte = cme->cm_ptentry;
+        KASSERT(pte != NULL);
+
+        paddr_t victim_paddr = (paddr_t)(i * PAGE_SIZE);
+
+        /* Se la pagina è dirty o non è mai stata swappata, scrivila nello swapfile */
+        if (cme->cm_dirty || !cme->cm_in_swap) {
+            unsigned int idx = swap_out(victim_paddr);
+            pte->pt_swap_index = (int)idx;
+            cme->cm_in_swap    = true;
+            cme->cm_dirty      = false;
+        }
+
+        /* Aggiorna la PTE: ora sta solo nello swap */
+        pte->pt_status = IN_SWAP;
+        pte->pt_paddr  = 0;
+
+        /* Invalida eventuale entry TLB per questo frame */
+        tlb_remove_by_paddr(victim_paddr);
+
+        /* Libera il frame nella coremap */
+        cme->cm_used      = 0;
+        cme->cm_ptentry   = NULL;
+        cme->cm_allocsize = 0;
+        /* cm_kernel resta 0, cm_in_swap resta true */
+
+        return victim_paddr;
+    }
+
+    panic("evict_page: no evictable frame found\n");
+}
+
+//APIs
+paddr_t
+coremap_get_frame(struct pt_entry *ptentry)
+{
+    /* Una sola pagina utente per volta */
+    return coremap_getppages(1, ptentry);
+}
+
+void
+coremap_free_frame(paddr_t addr)
+{
+    coremap_freeppages(addr);
 }

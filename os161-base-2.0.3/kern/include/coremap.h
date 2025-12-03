@@ -23,9 +23,13 @@ struct coremap_entry {
     struct pt_entry *cm_ptentry;
 };
 
-void        coremap_bootstrap(void);
-paddr_t     coremap_getppages(int npages, struct pt_entry *cm_ptentry);
-void        coremap_freeppages(paddr_t addr);
+void   coremap_bootstrap(void);
+paddr_t coremap_getppages(int npages, struct pt_entry *ptentry);
+void   coremap_freeppages(paddr_t addr);
+
+paddr_t     coremap_get_frame(struct pt_entry *ptentry);
+void        coremap_free_frame(paddr_t addr);
+paddr_t     evict_page(void); 
 
 
 #endif /* _COREMAP_H_ */

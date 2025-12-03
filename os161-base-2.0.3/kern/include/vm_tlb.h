@@ -22,6 +22,15 @@ void tlb_inserts(vaddr_t vaddr, paddr_t paddr, bool ro);
  * @brief Removes a TLB entry corresponding to the given virtual address.
  * @param vaddr 
  */
-void tlb_remove(vaddr_t vaddr);
+//void tlb_remove(vaddr_t vaddr);
+
+/**
+ * @brief Removes a TLB entry correspondign to the given phisical address
+ * 
+ * @param paddr 
+ */
+void tlb_remove_by_paddr(paddr_t paddr);
+
+void tlb_remove_entry(vaddr_t vaddr);
 
 #endif /* _VM_TLB_H_ */
