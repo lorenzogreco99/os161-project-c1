@@ -1,3 +1,5 @@
+os161-base-2.0.3/man/dev/
+.vscode
 .DS_Store
 os161/toolbuild/buildgcc/
 *.o
