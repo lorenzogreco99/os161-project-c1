@@ -1,4 +1,5 @@
-# Kernel config file - using dumbvm (for now)
+# Kernel config file using dumbvm.
+# This should be used until you have your own VM system.
 
 include conf/conf.kern		# get definitions of available options
 
@@ -30,8 +31,5 @@ options semfs			# Semaphores for userland
 options sfs			# Always use the file system
 #options netfs			# You might write this as a project.
 
-#options dumbvm			# Chewing gum and baling wire.
-
-# For when we will have a VM configured
-options DEMAND_PAGING		# Use the new VM with DP
 options syscalls
+options rudevm

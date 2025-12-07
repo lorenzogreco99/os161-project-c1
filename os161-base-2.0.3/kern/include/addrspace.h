@@ -1,71 +1,113 @@
-/**
- * @file addrspace.h
- * @author Lisa Giacobazzi
- * @brief Address space structure and function prototypes.
- * @details This file defines the addrspace structure used to manage
- *          virtual memory address spaces in the OS/161 kernel.
- * @date 2025-12-01
+/*
+ * Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2008, 2009
+ *	The President and Fellows of Harvard College.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE UNIVERSITY OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef _ADDRSPACE_H_
 #define _ADDRSPACE_H_
 
+/*
+ * Address space structure and operations.
+ */
+
+
 #include <vm.h>
 #include "opt-dumbvm.h"
-#include <machine/vm.h>
-
-#ifndef PADDR_TO_KVADDR
-#define PADDR_TO_KVADDR(paddr) ((vaddr_t)((paddr) + MIPS_KSEG0))
-#endif
-
-#ifndef KVADDR_TO_PADDR
-#define KVADDR_TO_PADDR(vaddr) ((paddr_t)((vaddr) - MIPS_KSEG0))
-#endif
+#include "opt-rudevm.h"
 
 struct vnode;
 
-struct pt_entry;  // forward declaration, definita in pt.h
 
-#if !OPT_DUMBVM
-
-/* Numero massimo di regioni per address space:
- * tipicamente: text, data+bss, (eventuale heap), stack.
- * Se vuoi puoi aumentarlo più avanti.
+/*
+ * Address space - data structure associated with the virtual memory
+ * space of a process.
+ *
+ * You write this.
  */
-#define AS_MAXREGIONS 4
-
-struct region {
-        vaddr_t vbase;   /* base virtuale allineata a pagina */
-        size_t  npages;  /* numero di pagine nella regione    */
-        /* in futuro potresti aggiungere permessi:
-         * int readable, writeable, executable;
-         */
-};
-
-#endif
 
 struct addrspace {
 #if OPT_DUMBVM
         vaddr_t as_vbase1;
         paddr_t as_pbase1;
-        size_t  as_npages1;
+        size_t as_npages1;
         vaddr_t as_vbase2;
         paddr_t as_pbase2;
-        size_t  as_npages2;
+        size_t as_npages2;
         paddr_t as_stackpbase;
 #else
-        /* Page table dinamica */
-        struct pt_entry *pt_entries;
-        unsigned         pt_nentries;
-        unsigned         pt_capacity;
-
-        /* Region table semplice */
-        struct region    regions[AS_MAXREGIONS];
-        unsigned         nregions;
+        /* Put stuff here for your VM system */
+#if OPT_RUDEVM
+        struct segment *s_text;
+        struct segment *s_data;
+        struct segment *s_stack;
+#endif
 #endif
 };
 
-/* Prototipi – solo dichiarazioni qui */
+/*
+ * Functions in addrspace.c:
+ *
+ *    as_create - create a new empty address space. You need to make
+ *                sure this gets called in all the right places. You
+ *                may find you want to change the argument list. May
+ *                return NULL on out-of-memory error.
+ *
+ *    as_copy   - create a new address space that is an exact copy of
+ *                an old one. Probably calls as_create to get a new
+ *                empty address space and fill it in, but that's up to
+ *                you.
+ *
+ *    as_activate - make curproc's address space the one currently
+ *                "seen" by the processor.
+ *
+ *    as_deactivate - unload curproc's address space so it isn't
+ *                currently "seen" by the processor. This is used to
+ *                avoid potentially "seeing" it while it's being
+ *                destroyed.
+ *
+ *    as_destroy - dispose of an address space. You may need to change
+ *                the way this works if implementing user-level threads.
+ *
+ *    as_define_region - set up a region of memory within the address
+ *                space.
+ *
+ *    as_prepare_load - this is called before actually loading from an
+ *                executable into the address space.
+ *
+ *    as_complete_load - this is called when loading from an executable
+ *                is complete.
+ *
+ *    as_define_stack - set up the stack region in the address space.
+ *                (Normally called *after* as_complete_load().) Hands
+ *                back the initial stack pointer for the new process.
+ *
+ * Note that when using dumbvm, addrspace.c is not used and these
+ * functions are found in dumbvm.c.
+ */
 
 struct addrspace *as_create(void);
 int               as_copy(struct addrspace *src, struct addrspace **ret);
@@ -73,16 +115,34 @@ void              as_activate(void);
 void              as_deactivate(void);
 void              as_destroy(struct addrspace *);
 
+#if OPT_RUDEVM
+int               as_define_region(struct addrspace *as,
+                                   vaddr_t vaddr, size_t sz,
+                                   off_t elf_offset,
+                                   int readable,
+                                   int writeable,
+                                   int executable);
+#else
 int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
                                    int readable,
                                    int writeable,
                                    int executable);
+#endif
+
 int               as_prepare_load(struct addrspace *as);
 int               as_complete_load(struct addrspace *as);
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
 
-/* Dichiarazione di load_elf: UNA sola volta qui va benissimo */
+
+/*
+ * Functions in loadelf.c
+ *    load_elf - load an ELF user program executable into the current
+ *               address space. Returns the entry point (initial PC)
+ *               in the space pointed to by ENTRYPOINT.
+ */
+
 int load_elf(struct vnode *v, vaddr_t *entrypoint);
+
 
 #endif /* _ADDRSPACE_H_ */

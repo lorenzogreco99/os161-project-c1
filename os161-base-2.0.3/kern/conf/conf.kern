@@ -262,12 +262,6 @@ defdevice       random                  dev/generic/random.c
 # expect to find is machine-dependent.)
 #
 
-defoption DEMAND_PAGING
-optfile   DEMAND_PAGING    vm/vm_tlb.c
-optfile   DEMAND_PAGING    vm/demand_paging.c
-optfile   DEMAND_PAGING    vm/swapfile.c
-optfile   DEMAND_PAGING    vm/coremap.c
-
 include   arch/mips/conf/conf.arch
 include   arch/sys161/conf/conf.arch
 
@@ -347,8 +341,8 @@ file      proc/proc.c
 #
 
 file      vm/kmalloc.c
-optofffile dumbvm   vm/addrspace.c
 
+optofffile dumbvm   vm/addrspace.c
 
 #
 # Network
@@ -389,8 +383,6 @@ file      syscall/time_syscalls.c
 defoption syscalls
 optfile   syscalls syscall/file_syscall.c
 optfile   syscalls syscall/proc_syscall.c
-
-
 
 #
 # Startup and initialization
@@ -454,9 +446,17 @@ file		test/kmalloctest.c
 file		test/fstest.c
 optfile net	test/nettest.c
 
-defoption hello
-optfile hello main/mfunc.c
+########################################
+#                                      #
+#              Assignment              #
+#                                      #
+########################################
 
-#NEW PDS WORK
-defoption hello2
-optfile hello2 main/hello.c
+defoption rudevm
+optfile   rudevm    vm/vm_tlb.c
+optfile   rudevm    vm/vm.c
+optfile   rudevm    vm/coremap.c    
+optfile   rudevm    vm/swapfile.c
+optfile   rudevm    vm/pt.c
+optfile   rudevm    vm/segment.c
+# do not compile ram.c as it is not used in rudevm

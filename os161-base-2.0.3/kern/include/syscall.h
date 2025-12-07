@@ -32,7 +32,8 @@
 
 
 #include <cdefs.h> /* for __DEAD */
-#include <opt-syscalls.h>	//added for enabling/disabling syscalls - automatically geenerated w/ ./config
+#include <opt-syscalls.h>
+
 struct trapframe; /* from <machine/trapframe.h> */
 
 /*

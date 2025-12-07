@@ -22,10 +22,10 @@ void
 sys__exit(int status)
 {
   /* get address space of current process and destroy */
-  struct addrspace *as = proc_getas();	//gives back the address space of the current process
-  as_destroy(as);	//frees all the structures associated to the address space
+  struct addrspace *as = proc_getas();
+  as_destroy(as);
   /* thread exits. proc data structure will be lost */
-  thread_exit();	//does not return, does context switch to another thread
+  thread_exit();
 
   panic("thread_exit returned (should not happen)\n");
   (void) status; // TODO: status handling

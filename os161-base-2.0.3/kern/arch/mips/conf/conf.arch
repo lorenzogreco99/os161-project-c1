@@ -71,9 +71,7 @@ machine mips file    vm/copyinout.c		# copyin/out et al.
 # of a VM system. It is just barely capable of running a single userlevel
 # program as long as that program's not very large.
 defoption   dumbvm
-#machine mips optfile dumbvm    arch/mips/vm/dumbvm.c
-#OUR solution
-optfile   DEMAND_PAGING    vm/demand_paging.c
+machine mips optfile dumbvm    arch/mips/vm/dumbvm.c
 
 #
 # System call layer

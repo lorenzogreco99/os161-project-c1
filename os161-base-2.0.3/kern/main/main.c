@@ -50,17 +50,10 @@
 #include <test.h>
 #include <version.h>
 #include "autoconf.h"  // for pseudoconfig
-
-#include "opt-hello.h"
-#include "mfunc.h"
-
-#include "hello.h"
-
-#include "opt-DEMAND_PAGING.h"
-#if OPT_DEMAND_PAGING
+#include "opt-rudevm.h"
+#if OPT_RUDEVM 
 #include <coremap.h>
 #endif
-
 
 /*
  * These two pieces of data are maintained by the makefiles and build system.
@@ -111,16 +104,16 @@ boot(void)
 	kprintf("%s", harvard_copyright);
 	kprintf("\n");
 
-	kprintf("Group LLL's system version %s (%s #%d)\n",
+	kprintf("Put-your-group-name-here's system version %s (%s #%d)\n",
 		GROUP_VERSION, buildconfig, buildversion);
 	kprintf("\n");
 
 	/* Early initialization. */
- #if DEMAND_PAGING
- 	coremap_bootstrap();
- #else
+#if OPT_RUDEVM 
+	coremap_bootstrap();
+#else
 	ram_bootstrap();
- #endif
+#endif
 	proc_bootstrap();
 	thread_bootstrap();
 	hardclock_bootstrap();
@@ -223,12 +216,6 @@ void
 kmain(char *arguments)
 {
 	boot();
-
-	vaddr_t t = alloc_kpages(3);
-	kprintf("Allocated 3 pages at: %p\n", (void*)t);
-
-	free_kpages(t);
-	kprintf("Freed them.\n");
 
 	menu(arguments);
 

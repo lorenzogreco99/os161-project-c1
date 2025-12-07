@@ -1,97 +1,51 @@
-/**
- * @file pt.c
- * @author Lisa Giacobazzi
- * @brief Page table management functions.
- * @date 2025-12-01
- */
-
-#include <types.h>
-#include <lib.h>
-#include <addrspace.h>
-#include <coremap.h>
 #include <pt.h>
+#include <proc.h>
+#include <addrspace.h>
+#include <segment.h>
+#include <current.h>
+#include <kern/errno.h>
 
-#define PT_INIT_CAPACITY 64
 
-static
-int pt_grow(struct addrspace *as)
+struct pt_entry *pt_create(unsigned long pagetable_size)
 {
-    unsigned newcap = (as->pt_capacity == 0) ? PT_INIT_CAPACITY : as->pt_capacity * 2;
-    struct pt_entry *newpt = kmalloc(newcap * sizeof(struct pt_entry));
-    if (newpt == NULL) {
-        return ENOMEM;
-    }
+    unsigned long i = 0;
 
-    // copia le entry esistenti
-    for (unsigned i = 0; i < as->pt_nentries; i++) {
-        newpt[i] = as->pt_entries[i];
-    }
+    struct pt_entry *pt = kmalloc(sizeof(struct pt_entry) * pagetable_size);
 
-    // inizializza il resto
-    for (unsigned i = as->pt_nentries; i < newcap; i++) {
-        newpt[i].pt_status = NOT_LOADED;
-        newpt[i].pt_vaddr = 0;
-        newpt[i].pt_paddr = 0;
-        newpt[i].pt_swap_index = -1;
-    }
-
-    kfree(as->pt_entries);
-    as->pt_entries = newpt;
-    as->pt_capacity = newcap;
-    return 0;
-}
-
-struct pt_entry *
-pt_lookup(struct addrspace *as, vaddr_t vaddr)
-{
-    if (as == NULL || as->pt_entries == NULL) {
+    if (pt == NULL)
+    {
         return NULL;
     }
 
-    vaddr &= PAGE_FRAME;
 
-    for (unsigned i = 0; i < as->pt_nentries; i++) {
-        if (as->pt_entries[i].pt_vaddr == vaddr) {
-            return &as->pt_entries[i];
-        }
+    for (i = 0; i < pagetable_size; i++)
+    {
+        pt[i].frame_index = 0;
+        pt[i].swap_index = 0;
     }
+
+    return pt;
+}
+
+
+struct pt_entry *pt_get_entry(const vaddr_t vaddr)
+{
+    int pt_index;
+    struct addrspace *cur_as;
+
+    cur_as = curproc->p_addrspace;
+
+    if (vaddr >= cur_as->s_text->base_vaddr && vaddr < cur_as->s_data->base_vaddr + cur_as->s_data->npages * PAGE_SIZE)
+    {
+        pt_index = vaddr / PAGE_SIZE;
+        return &curproc->p_ptable[pt_index];
+    }
+
+    if (vaddr >= cur_as->s_stack->base_vaddr && vaddr < cur_as->s_stack->base_vaddr + cur_as->s_stack->npages)
+    {
+        pt_index = cur_as->s_text->npages + cur_as->s_data->npages + (vaddr - cur_as->s_stack->base_vaddr)/PAGE_SIZE ;
+        return &curproc->p_ptable[pt_index];
+    }
+
     return NULL;
-}
-
-struct pt_entry *
-pt_get_or_create(struct addrspace *as, vaddr_t vaddr)
-{
-    int result;
-
-    vaddr &= PAGE_FRAME;
-
-    // prova a trovarla
-    struct pt_entry *pte = pt_lookup(as, vaddr);
-    if (pte != NULL) {
-        return pte;
-    }
-
-    // serve una nuova entry
-    if (as->pt_nentries == as->pt_capacity) {
-        result = pt_grow(as);
-        if (result) {
-            return NULL;
-        }
-    }
-
-    pte = &as->pt_entries[as->pt_nentries++];
-    pte->pt_vaddr = vaddr;
-    pte->pt_paddr = 0;
-    pte->pt_status = NOT_LOADED;
-    pte->pt_swap_index = -1;
-    return pte;
-}
-
-void
-pt_set_entry(struct pt_entry *pte, paddr_t paddr,
-             int swap_index, enum pt_status status)
-{
-    pte->pt_paddr = paddr;
-    pte->pt_swap_index = swap_index;
-    pte->pt_status = status;
 }

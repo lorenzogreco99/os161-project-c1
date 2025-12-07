@@ -33,7 +33,10 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <proc.h>
-#include <vm_tlb.h>
+#include <segment.h>
+
+
+#define VM_STACKPAGES    18
 
 
 /*
@@ -42,79 +45,51 @@
  * used. The cheesy hack versions in dumbvm.c are used instead.
  */
 
-int
-as_copy(struct addrspace *old, struct addrspace **ret)
-{
-#if OPT_DUMBVM
-    /* qui puoi tenere l’implementazione originale se vuoi supportare fork con dumbvm */
-    panic("as_copy: DUMBVM non usato con questo progetto\n");
-    (void)old;
-    (void)ret;
-    return ENOSYS;
-#else
-    (void)old;
-    *ret = NULL;
-    return ENOSYS;   /* fork fallisce in modo esplicito */
-#endif
-}
-
-
-#if OPT_DUMBVM
-
-/*
- * Note! If OPT_DUMBVM is set, as is the case, this file should not be compiled or linked or in any way used.
- */
-
-#error "addrspace.c compiled even though OPT_DUMBVM is set; check your config"
-
-
-#else  /* !OPT_DUMBVM: NOSTRA VERSIONE DEMAND PAGING -------------------- */
-
-
 struct addrspace *
 as_create(void)
 {
-        struct addrspace *as;
+	struct addrspace *as;
 
-        as = kmalloc(sizeof(struct addrspace));
-        if (as == NULL) {
-                return NULL;
-        }	
+	as = kmalloc(sizeof(struct addrspace));
+	if (as == NULL) {
+		return NULL;
+	}
 
-        /* Page table inizialmente vuota */
-        as->pt_entries  = NULL;
-        as->pt_nentries = 0;
-        as->pt_capacity = 0;
+	as->s_data = NULL;
+	as->s_text = NULL;
+	as->s_stack = NULL;
 
-        /* Nessuna regione definita */
-        as->nregions = 0;
-        for (unsigned i = 0; i < AS_MAXREGIONS; i++) {
-                as->regions[i].vbase  = 0;
-                as->regions[i].npages = 0;
-        }	
+	return as;
+}
 
-        return as;
-}	
+int
+as_copy(struct addrspace *old, struct addrspace **ret)
+{
+	struct addrspace *newas;
 
+	newas = as_create();
+	if (newas==NULL) {
+		return ENOMEM;
+	}
+
+	/*
+	 * Write this.
+	 */
+
+	(void)old;
+
+	*ret = newas;
+	return 0;
+}
 
 void
 as_destroy(struct addrspace *as)
 {
-        if (as == NULL) {
-                return;
-        }
+	/*
+	 * Clean up as needed.
+	 */
 
-        /* TODO in futuro:
-         * - per ogni pt_entry IN_MEMORY, liberare i frame fisici via coremap
-         *   (coremap_freeppages ecc.)
-         * Per ora ci limitiamo a liberare solo la struttura dati.
-         */
-
-        if (as->pt_entries != NULL) {
-                kfree(as->pt_entries);
-        }
-
-        kfree(as);
+	kfree(as);
 }
 
 void
@@ -131,7 +106,9 @@ as_activate(void)
 		return;
 	}
 
-	tlb_invalidates();
+	/*
+	 * Write this.
+	 */
 }
 
 void
@@ -155,42 +132,45 @@ as_deactivate(void)
  * want to implement them.
  */
 int
-as_define_region(struct addrspace *as,
-                 vaddr_t vaddr, size_t sz,
-                 int readable,
-                 int writeable,
-                 int executable)
+as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize, off_t elf_offset,
+		 int readable, int writeable, int executable)
 {
-        (void)readable;
-        (void)writeable;
-        (void)executable;
-        /* Per ora ignoriamo i permessi – puoi aggiungerli nella struct region
-         * se vuoi gestire anche i bit R/W/X.
-         */
+	size_t npages;
 
-        /* 1. Allinea base e size a PAGE_SIZE */
+	dumbvm_can_sleep();
 
-        vaddr_t vbase = vaddr & PAGE_FRAME;  /* arrotonda vaddr verso il basso */
+	/* Align the region. First, the base... */
+	memsize += vaddr & ~(vaddr_t)PAGE_FRAME;
+	vaddr &= PAGE_FRAME;
 
-        size_t offset = vaddr - vbase;
-        sz += offset;
+	/* ...and now the length. */
+	memsize = (memsize + PAGE_SIZE - 1) & PAGE_FRAME;
 
-        /* numero di pagine necessarie, arrotondato per eccesso */
-        size_t npages = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+	npages = memsize / PAGE_SIZE;
 
-        /* 2. Controlla se abbiamo spazio per un’altra regione */
-        if (as->nregions >= AS_MAXREGIONS) {
-                return EFAULT;
-        }
+	/* We don't use these - all pages are read-write */
+	(void)readable;
+	(void)writeable;
+	(void)executable;
 
-        unsigned idx = as->nregions++;
+	if (as->s_text == NULL) {
+		as->s_text = segment_create();
+		segment_define(as->s_text, elf_offset, vaddr, npages);
+		return 0;
+	}
 
-        as->regions[idx].vbase  = vbase;
-        as->regions[idx].npages = npages;
+	if (as->s_data == NULL) {
+		as->s_data = segment_create();
+		segment_define(as->s_data, elf_offset, vaddr, npages);
+		return 0;
+	}
 
-        return 0;
+	/*
+	 * Support for more than two regions is not available.
+	 */
+	kprintf("dumbvm: Warning: too many regions\n");
+	return ENOSYS;
 }
-
 
 int
 as_prepare_load(struct addrspace *as)
@@ -217,16 +197,19 @@ as_complete_load(struct addrspace *as)
 int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
-	/*
-	 * Write this.
-	 */
-
-	(void)as;
-
+	as->s_stack->base_vaddr = USERSTACK;
+	as->s_stack->npages = VM_STACKPAGES;;
+	
 	/* Initial user-level stack pointer */
 	*stackptr = USERSTACK;
 
 	return 0;
 }
 
-#endif /* !OPT_DUMBVM */
+// static
+// void
+// as_zero_region(paddr_t paddr, unsigned npages)
+// {
+// 	bzero((void *)PADDR_TO_KVADDR(paddr), npages * PAGE_SIZE);
+// }
+
