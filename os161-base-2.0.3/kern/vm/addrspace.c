@@ -34,17 +34,13 @@
 #include <vm.h>
 #include <proc.h>
 #include <segment.h>
+#include <vm_tlb.h>
+#include <pt.h>
 
 
 #define VM_STACKPAGES    18
 
-
-/*
- * Note! If OPT_DUMBVM is set, as is the case until you start the VM
- * assignment, this file is not compiled or linked or in any way
- * used. The cheesy hack versions in dumbvm.c are used instead.
- */
-
+#if OPT_RUDEVM
 struct addrspace *
 as_create(void)
 {
@@ -86,9 +82,12 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 void
 as_destroy(struct addrspace *as)
 {
-	/*
-	 * Clean up as needed.
-	 */
+	KASSERT(as != NULL);
+
+	pt_destroy(as->as_ptable);
+	segment_destroy(as->s_text);
+	segment_destroy(as->s_data);
+	segment_destroy(as->s_stack);
 
 	kfree(as);
 }
@@ -107,7 +106,7 @@ as_activate(void)
 		return;
 	}
 
-	// Do nothing because it will be loaded in TLB on demand
+	tlb_invalidate();
 }
 
 void
@@ -135,6 +134,8 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize, off_t elf_
 		 int readable, int writeable, int executable)
 {
 	size_t npages;
+
+	KASSERT(as != NULL);
 
 	//vm_can_sleep();
 
@@ -174,6 +175,8 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize, off_t elf_
 int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
+	KASSERT(as != NULL);
+
 	as->s_stack = segment_create();
 	segment_define(as->s_stack, 0, USERSTACK - VM_STACKPAGES * PAGE_SIZE, VM_STACKPAGES);
 	
@@ -183,13 +186,78 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	return 0;
 }
 
-#if OPT_RUDEVM
 int
 as_define_pt(struct addrspace *as)
 {
+	KASSERT(as != NULL);
+
 	/* Create the page table based on the segments loaded previously */
 	as->as_ptable = pt_create(as->s_data->npages + as->s_text->npages + as->s_stack->npages);
 
 	return 0;
 }
-#endif
+
+static
+struct segment *
+as_get_segment(struct addrspace *as, vaddr_t vaddr){
+
+	KASSERT(as != NULL);
+    
+    if (vaddr >= as->s_text->base_vaddr && vaddr < as->s_text->base_vaddr + as->s_text->npages * PAGE_SIZE)
+    {
+        return as->s_text;
+    }
+
+    if (vaddr >= as->s_data->base_vaddr && vaddr < as->s_data->base_vaddr + as->s_data->npages * PAGE_SIZE)
+    {
+        return as->s_data;
+    }
+
+    if (vaddr >= as->s_stack->base_vaddr && vaddr < as->s_stack->base_vaddr + as->s_stack->npages * PAGE_SIZE)
+    {
+        return as->s_stack;
+    }
+    
+    return NULL;
+}
+
+off_t
+as_get_elf_offset(struct addrspace *as, vaddr_t vaddr)
+{
+	struct segment *seg;
+
+	KASSERT(as != NULL);
+
+	seg = as_get_segment(as, vaddr);
+	if(seg == NULL)
+	{
+		panic("Cannot retrieve as segment");
+	}
+
+	return seg->elf_offset - seg->base_vaddr + vaddr;
+}
+
+int
+as_get_segment_type(struct addrspace *as, vaddr_t vaddr)
+{
+	KASSERT(as != NULL);
+    
+    if (vaddr >= as->s_text->base_vaddr && vaddr < as->s_text->base_vaddr + as->s_text->npages * PAGE_SIZE)
+    {
+        return SEGMENT_TEXT;
+    }
+
+    if (vaddr >= as->s_data->base_vaddr && vaddr < as->s_data->base_vaddr + as->s_data->npages * PAGE_SIZE)
+    {
+        return SEGMENT_DATA;
+    }
+
+    if (vaddr >= as->s_stack->base_vaddr && vaddr < as->s_stack->base_vaddr + as->s_stack->npages * PAGE_SIZE)
+    {
+        return SEGMENT_STACK;
+    }
+    
+    panic("Could not find the segment");
+}
+
+#endif /* OPT_RUDEVM */
