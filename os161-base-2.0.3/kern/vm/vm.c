@@ -14,6 +14,7 @@
 #include <vm_tlb.h>
 #include "opt-rudevm.h"
 #include "syscall.h"
+#include <swapfile.h>
 
 #if OPT_RUDEVM
 /* under vm, always have 72k of user stack */
@@ -210,7 +211,16 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 				load_page(curproc->p_vnode, elf_offset, page_paddr);
 				pt_set_entry(as, faultaddress, page_paddr, 0, IN_MEMORY);
 			}
+			break;
 		case IN_MEMORY:
+			break;
+		case IN_SWAP:
+			page_paddr = alloc_upage();
+			if(page_paddr == 0){
+				panic("not enough memory, swap still not implemented!\n");
+			}
+			swap_in(page_paddr, pt_row->swap_index);
+			pt_set_entry(as, faultaddress, page_paddr, 0, IN_MEMORY);
 			break;
 		default:
 			panic("Cannot resolve fault");
