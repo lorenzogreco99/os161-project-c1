@@ -39,10 +39,7 @@
 #include <spinlock.h>
 #include <pt.h>
 #include "opt-rudevm.h"
-<<<<<<< HEAD
 #include "opt-waitpid.h"
-=======
->>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 
 struct addrspace;
 struct thread;

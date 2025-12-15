@@ -13,13 +13,8 @@
 #include <addrspace.h>
 #include <vm_tlb.h>
 #include "opt-rudevm.h"
-<<<<<<< HEAD
 #include "syscall.h"
 
-=======
-
-
->>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 #if OPT_RUDEVM
 /* under vm, always have 72k of user stack */
 /* (this must be > 64K so argument blocks of size ARG_MAX will fit) */
@@ -149,13 +144,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	struct addrspace *as;
 	paddr_t page_paddr;
 	off_t elf_offset;
-<<<<<<< HEAD
 	int seg_type = 0;
 	int readonly;
 	
-=======
-	int seg_type;
->>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 
 	/* Obtain the first address of the page */
 	faultaddress &= PAGE_FRAME;
@@ -164,16 +155,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	switch (faulttype)
 	{
-<<<<<<< HEAD
  	    case VM_FAULT_READONLY:
 			kprintf("vm: got VM_FAULT_READONLY, process killed\n");
 			sys__exit(-1);
 			return 0;
-=======
-	    case VM_FAULT_READONLY:
-			panic("vm: got VM_FAULT_READONLY\n");
-			// TODO: exit from process;
->>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 	    case VM_FAULT_READ:
 	    case VM_FAULT_WRITE:
 			break;
@@ -230,7 +215,6 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		default:
 			panic("Cannot resolve fault");
 	}
-<<<<<<< HEAD
 	if(seg_type != 0){
 		readonly =  seg_type == SEGMENT_TEXT ;
 	}
@@ -241,11 +225,6 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	
 	tlb_insert(faultaddress, pt_row->frame_index * PAGE_SIZE, readonly); // TODO: check permissions
 
-=======
-
-	tlb_insert(faultaddress, pt_row->frame_index * PAGE_SIZE, false); // TODO: check permissions
-
->>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 	return 0;
 }
 #endif /* OPT_RUDEVM */
