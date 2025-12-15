@@ -32,5 +32,8 @@ options sfs			# Always use the file system
 #options netfs			# You might write this as a project.
 
 options syscalls
+<<<<<<< HEAD
 options waitpid
+=======
+>>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 options rudevm

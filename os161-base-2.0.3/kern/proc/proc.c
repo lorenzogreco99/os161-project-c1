@@ -49,8 +49,11 @@
 #include <addrspace.h>
 #include <vnode.h>
 #include <vfs.h>
+<<<<<<< HEAD
 #include <synch.h>
 #include "opt-waitpid.h"
+=======
+>>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.

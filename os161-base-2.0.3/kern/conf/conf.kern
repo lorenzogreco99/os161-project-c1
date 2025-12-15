@@ -452,8 +452,11 @@ defoption syscalls
 optfile   syscalls syscall/file_syscall.c
 optfile   syscalls syscall/proc_syscall.c
 
+<<<<<<< HEAD
 defoption waitpid
 
+=======
+>>>>>>> e207a551cf0d5934c5d18413550b4163006c587e
 defoption rudevm
 optfile   rudevm    vm/vm_tlb.c
 optfile   rudevm    vm/vm.c
