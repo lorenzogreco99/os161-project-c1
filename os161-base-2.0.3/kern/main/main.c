@@ -53,7 +53,6 @@
 #include "opt-rudevm.h"
 #if OPT_RUDEVM 
 #include <coremap.h>
-#include <swapfile.h>
 #endif
 
 /*
@@ -132,9 +131,6 @@ boot(void)
 	kheap_nextgeneration();
 
 	/* Late phase of initialization. */
-#if OPT_RUDEVM 
-	swap_bootstrap();
-#endif
 	vm_bootstrap();
 	kprintf_bootstrap();
 	thread_start_cpus();
