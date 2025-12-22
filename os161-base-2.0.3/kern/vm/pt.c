@@ -4,6 +4,8 @@
 #include <segment.h>
 #include <current.h>
 #include <kern/errno.h>
+#include <swapfile.h>
+#include "opt-swap.h"
 
 /**
  * The page table is an array of entries where each of them 
@@ -149,6 +151,32 @@ void pt_empty(struct pt_entry* pt, int size){
             paddr_t paddr = ( pt[i].frame_index ) << 12;
             free_upage(paddr);
         }
+#if OPT_SWAP
+        else if (pt[i].status == IN_SWAP)
+        {
+            swap_free(pt[i].swap_index);
+        }
+#endif
     }
 
+}
+
+struct pt_entry *
+pt_get_entry_from_paddr(struct addrspace *as, const paddr_t paddr)
+{
+    int i;
+    int n;
+    unsigned int frame_index;
+
+    frame_index = paddr / PAGE_SIZE;
+    n = as->s_data->npages + as->s_text->npages + as->s_stack->npages;
+    for(i=0; i<n; i++)
+    {
+        if(as->as_ptable[i].frame_index == frame_index)
+        {
+            return &as->as_ptable[i];
+        }
+    }
+
+    return NULL;
 }
