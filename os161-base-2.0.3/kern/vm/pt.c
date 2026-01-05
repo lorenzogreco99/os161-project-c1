@@ -4,6 +4,9 @@
 #include <segment.h>
 #include <current.h>
 #include <kern/errno.h>
+#include <swapfile.h>
+#include <vm.h>
+#include "opt-swap.h"
 
 /**
  * The page table is an array of entries where each of them 
@@ -15,9 +18,9 @@
  * 
  * Since the address space contains a large number of pages 
  * which don't belong to a segment, the page table does not have an
- * entry for them in order to save memory.
+ * entry for them in order to not waste memory.
  * It means that the virtual address in the page table 
- * IS NOT index * PAGE_SIZE.
+ * IS NOT computed as index * PAGE_SIZE.
  * 
  * We can think the page table as divided in three different section, 
  * each of them dedicated to one segment, and starting from the virtual
@@ -53,7 +56,7 @@ static int pt_get_index(struct addrspace *as, vaddr_t vaddr){
     
     KASSERT(as != NULL);
 
-    if (vaddr >= as->s_text->base_vaddr && vaddr < as->s_text->base_vaddr + as->s_text->npages * PAGE_SIZE)
+    if (vaddr >= as->s_text->first_vaddr && vaddr < as->s_text->last_vaddr)
     {
         pt_index = ( vaddr - as->s_text->base_vaddr ) / PAGE_SIZE;
         KASSERT(pt_index < as->s_text->npages);
@@ -61,7 +64,7 @@ static int pt_get_index(struct addrspace *as, vaddr_t vaddr){
     }
     previous_pages += as->s_text->npages;
 
-    if (vaddr >= as->s_data->base_vaddr && vaddr < as->s_data->base_vaddr + as->s_data->npages * PAGE_SIZE)
+    if (vaddr >= as->s_data->first_vaddr && vaddr < as->s_data->last_vaddr)
     {
         pt_index = previous_pages + ( vaddr - as->s_data->base_vaddr ) / PAGE_SIZE;
         KASSERT(pt_index <  previous_pages + as->s_data->npages);
@@ -69,14 +72,14 @@ static int pt_get_index(struct addrspace *as, vaddr_t vaddr){
     }
     previous_pages += as->s_data->npages;
 
-    if (vaddr >= as->s_stack->base_vaddr && vaddr < as->s_stack->base_vaddr + as->s_stack->npages * PAGE_SIZE)
+    if (vaddr >= as->s_stack->first_vaddr && vaddr < as->s_stack->last_vaddr)
     {
         pt_index = previous_pages + (vaddr - as->s_stack->base_vaddr) / PAGE_SIZE ;
         KASSERT(pt_index <  previous_pages + as->s_stack->npages);
         return pt_index;
     }
 
-    panic("vaddr out of range?!\n");
+    panic("vaddr out of range! (pt_get_index)\n");
     return 0;
 }
 
@@ -112,29 +115,6 @@ struct pt_entry *pt_get_entry(struct addrspace *as, const vaddr_t vaddr)
     return &as->as_ptable[pt_index];
 }
 
-int pt_set_entry(struct addrspace *as, vaddr_t vaddr, paddr_t paddr, unsigned int swap_index, unsigned char status){
-
-    KASSERT(as != NULL);
-    KASSERT(status == NOT_LOADED || status == IN_SWAP || status == IN_MEMORY);
-    KASSERT(    (paddr == 0 && swap_index != 0 && status == IN_SWAP) 
-            ||  (paddr != 0 && swap_index == 0 && status == IN_MEMORY) 
-            ||  (paddr == 0 && swap_index == 0 && status == NOT_LOADED) );
-
-    
-
-    struct pt_entry *entry = pt_get_entry(as, vaddr);
-    if(entry == NULL){
-        return -1;
-    }    
-
-    entry->frame_index = (unsigned int)(paddr>>12);
-    entry->swap_index = swap_index;
-    entry->status = status;
-
-    return 1; 
-
-}
-
 void pt_destroy(struct pt_entry* entry) 
 {
     KASSERT(entry != NULL);
@@ -142,13 +122,48 @@ void pt_destroy(struct pt_entry* entry)
 }
 
 void pt_empty(struct pt_entry* pt, int size){
-
+    paddr_t paddr;
     KASSERT(pt != NULL);
+    KASSERT(pt != 0);
+
     for(int i = 0; i < size; i++){
-        if( pt[i].status == IN_MEMORY) {
-            paddr_t paddr = ( pt[i].frame_index ) << 12;
-            free_upage(paddr);
+        switch (pt[i].status)
+        {
+            case IN_MEMORY:
+                paddr = ( pt[i].frame_index ) * PAGE_SIZE;
+                free_upage(paddr);
+                break;
+            case IN_SWAP:
+#if OPT_SWAP       
+                swap_free(pt[i].swap_index);
+#else           
+                panic("SWAP Pages should not exists!");
+#endif
+                break;
+            default:
+                break;
         }
     }
 
+}
+
+struct pt_entry *
+pt_get_entry_from_paddr(struct addrspace *as, const paddr_t paddr)
+{
+    //NOT USED, maybe we should remove it?
+    int i;
+    int n;
+    unsigned int frame_index;
+
+    frame_index = paddr & PAGE_FRAME;
+    n = as->s_data->npages + as->s_text->npages + as->s_stack->npages;
+    for(i=0; i<n; i++)
+    {
+        if(as->as_ptable[i].frame_index == frame_index)
+        {
+            return &as->as_ptable[i];
+        }
+    }
+
+    return NULL;
 }

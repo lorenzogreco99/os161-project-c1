@@ -5,14 +5,12 @@
 #include <vfs.h>
 #include <vm.h>
 #include <vnode.h>
+#include <vm_tlb.h>
 
 static struct vnode *swapfile;
 static struct bitmap *swapmap;
-static bool swap_active = false;
 
-// TODO: spinlock
-
-void swap_init(void)
+void swap_bootstrap(void)
 {
     int err;
     char swapfile_name[16];
@@ -27,8 +25,6 @@ void swap_init(void)
     }
 
     swapmap = bitmap_create(SWAPFILE_SIZE / PAGE_SIZE);
-
-    swap_active = true;
 }
 
 void swap_in(paddr_t page_paddr, unsigned int swap_index)
@@ -38,7 +34,6 @@ void swap_in(paddr_t page_paddr, unsigned int swap_index)
     struct iovec iov;
     struct uio ku;
 
-    KASSERT(swap_active);
     KASSERT(page_paddr % PAGE_SIZE == 0);
     KASSERT(swap_index < SWAPFILE_SIZE / PAGE_SIZE);
     KASSERT(bitmap_isset(swapmap, swap_index));
@@ -63,7 +58,6 @@ unsigned int swap_out(paddr_t page_paddr)
     struct iovec iov;
     struct uio ku;
 
-    KASSERT(swap_active);
     KASSERT(page_paddr % PAGE_SIZE == 0);
 
     err = bitmap_alloc(swapmap, &swap_index);
@@ -81,5 +75,12 @@ unsigned int swap_out(paddr_t page_paddr)
         panic("Error swapping out\n");
     }
 
+    tlb_remove_by_paddr(page_paddr);
+
     return swap_index;
+}
+
+void swap_free(unsigned int swap_index)
+{
+    bitmap_unmark(swapmap, swap_index);
 }

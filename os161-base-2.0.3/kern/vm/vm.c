@@ -8,24 +8,24 @@
 #include <current.h>
 #include <mips/tlb.h>
 #include <addrspace.h>
+#include <pt.h>
 #include <vm.h>
 #include <coremap.h>
-#include <addrspace.h>
 #include <vm_tlb.h>
 #include "opt-rudevm.h"
 #include "syscall.h"
+#include <swapfile.h>
 
 #if OPT_RUDEVM
 /* under vm, always have 72k of user stack */
 /* (this must be > 64K so argument blocks of size ARG_MAX will fit) */
 
-
-static struct spinlock vm_lock = SPINLOCK_INITIALIZER;
-
 void
 vm_bootstrap(void)
 {
-	/* Do nothing. */
+#if OPT_SWAP
+	swap_bootstrap();
+#endif
 }
 
 /*
@@ -52,19 +52,20 @@ vm_can_sleep(void)
  * @brief get npages from the coremap.
  * 
  * @param npages 
- * @param kernel KERNEL if the page is requested from the kernel, USER otherwise.
+ * @param ptentry pointer to the pt entry, NULL if kernel's page.
  * @return paddr_t the first physical address of the requested pages.
  */
 static
 paddr_t
-getppages(unsigned long npages, char kernel)
+getppages(unsigned long npages, struct pt_entry *ptentry)
 {
 	paddr_t addr;
 
-	spinlock_acquire(&vm_lock);
-	addr = coremap_getppages(npages,kernel);
-	spinlock_release(&vm_lock);
-	
+	addr = coremap_getppages(npages, ptentry);
+	if (addr == 0) {
+		panic("Out of memory");
+	}
+
 	return addr;
 }
 
@@ -76,9 +77,7 @@ getppages(unsigned long npages, char kernel)
 static 
 void
 freeppages(paddr_t addr){
-	spinlock_acquire(&vm_lock);
 	coremap_freeppages(addr);
-	spinlock_release(&vm_lock);
 } 
 
 /* Allocate/free some kernel-space virtual pages */
@@ -88,10 +87,7 @@ alloc_kpages(unsigned npages)
 	paddr_t pa;
 
 	vm_can_sleep();
-	pa = getppages(npages, COREMAP_KERNEL);
-	if (pa==0) {
-		return 0;
-	}
+	pa = getppages(npages, NULL);
 	return PADDR_TO_KVADDR(pa);
 }
 
@@ -109,13 +105,13 @@ free_kpages(vaddr_t addr)
  * 
  * @return paddr_t the virtual address of the allocated frame
  */
-paddr_t 
-alloc_upage(){
+paddr_t
+alloc_upage(struct pt_entry *pt_row){
 	paddr_t pa;
 
+	vm_can_sleep();
 	/* the user can alloc one page at a time */
-	pa = getppages(1, COREMAP_USER);
-	
+	pa = getppages(1, pt_row);
 	return pa;
 }
 
@@ -142,13 +138,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	struct pt_entry *pt_row;
 	struct addrspace *as;
 	paddr_t page_paddr;
-	off_t elf_offset;
 	int seg_type = 0;
 	int readonly;
+	vaddr_t basefaultaddr;
 	
 
 	/* Obtain the first address of the page */
-	faultaddress &= PAGE_FRAME;
+	basefaultaddr = faultaddress & PAGE_FRAME;
 
 	DEBUG(DB_VM, "vm: fault: 0x%x\n", faultaddress);
 
@@ -190,41 +186,46 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	KASSERT(as->as_ptable != NULL);
 
 	pt_row = pt_get_entry(as, faultaddress);
+	seg_type = as_get_segment_type(as, faultaddress);
 	switch(pt_row->status)
 	{
 		case NOT_LOADED:
-			seg_type = as_get_segment_type(as, faultaddress);
-			if(seg_type == SEGMENT_STACK)
-			{
-				page_paddr = alloc_upage();
-				pt_set_entry(as, faultaddress, page_paddr, 0, IN_MEMORY);
-			}
-			else
-			{
-				elf_offset = as_get_elf_offset(as, faultaddress);
-				page_paddr = alloc_upage();
-				if(page_paddr == 0){
-					panic("not enough memory, swap still not implemented!\n");
-				}
-				load_page(curproc->p_vnode, elf_offset, page_paddr);
-				pt_set_entry(as, faultaddress, page_paddr, 0, IN_MEMORY);
-			}
+			page_paddr = alloc_upage(pt_row);
+
+			/* update page table	*/
+			pt_row->status = IN_MEMORY;
+			pt_row->frame_index = page_paddr/PAGE_SIZE;
+			pt_row->swap_index = 0;
+
+			if(seg_type != SEGMENT_STACK && as_check_in_elf(as,faultaddress))
+					as_load_page(as,curproc->p_vnode,faultaddress);
+			
+			break;
 		case IN_MEMORY:
 			break;
+		case IN_SWAP:
+#if OPT_SWAP
+			page_paddr = alloc_upage(pt_row);
+			swap_in(page_paddr, pt_row->swap_index);
+
+			/* update page table	*/
+			pt_row->status = IN_MEMORY;
+			pt_row->frame_index = page_paddr/PAGE_SIZE;
+			pt_row->swap_index = 0;
+#else
+			panic("swap not implemented!");
+#endif
+		break;
 		default:
 			panic("Cannot resolve fault");
 	}
-	if(seg_type != 0){
-		readonly =  seg_type == SEGMENT_TEXT ;
-	}
-	else
-	{
-		readonly = as_get_segment_type(as, faultaddress) == SEGMENT_TEXT;
-	}
-	
-	tlb_insert(faultaddress, pt_row->frame_index * PAGE_SIZE, readonly); // TODO: check permissions
+
+	KASSERT(seg_type != 0);
+	readonly = seg_type == SEGMENT_TEXT;
+
+	/* update tlb	*/
+	tlb_insert(basefaultaddr, pt_row->frame_index * PAGE_SIZE, readonly); 
 
 	return 0;
 }
 #endif /* OPT_RUDEVM */
-
