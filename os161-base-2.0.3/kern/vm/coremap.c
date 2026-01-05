@@ -69,7 +69,7 @@ void coremap_bootstrap(){
    * the pages right after firstfree as used.
    */
   coremap_size = sizeof(struct coremap_entry) * nRamFrames;
-  coremap_pages = (coremap_size + PAGE_SIZE - 1) / PAGE_SIZE;
+  coremap_pages = DIVROUNDUP(coremap_size, PAGE_SIZE);
   kernel_pages = firstpaddr / PAGE_SIZE;
 
   /*  Initialize the coremap. */
@@ -223,7 +223,7 @@ coremap_getppages(int npages, struct pt_entry *ptentry)
   {
     ptentry->status = IN_MEMORY;
     ptentry->frame_index = beginning;
-    ptentry->swap_index = 0;
+    //ptentry->swap_index = 0;
   }
 
   bzero((void *)PADDR_TO_KVADDR(beginning * PAGE_SIZE), PAGE_SIZE * npages);
