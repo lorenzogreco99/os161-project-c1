@@ -23,9 +23,13 @@
 void
 vm_bootstrap(void)
 {
+<<<<<<< HEAD
 #if OPT_SWAP
 	swap_bootstrap();
 #endif
+=======
+	swap_bootstrap();
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 }
 
 /*
@@ -142,6 +146,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	int readonly;
 	vaddr_t basefaultaddr;
 	
+	//kprintf("0x%08lx\n",(long unsigned int)faultaddress);
 
 	/* Obtain the first address of the page */
 	basefaultaddr = faultaddress & PAGE_FRAME;
@@ -190,6 +195,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	switch(pt_row->status)
 	{
 		case NOT_LOADED:
+<<<<<<< HEAD
 			page_paddr = alloc_upage(pt_row);
 
 			/* update page table	*/
@@ -200,10 +206,16 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 			if(seg_type != SEGMENT_STACK && as_check_in_elf(as,faultaddress))
 					as_load_page(as,curproc->p_vnode,faultaddress);
 			
+=======
+			alloc_upage(pt_row);
+			if(seg_type != SEGMENT_STACK && as_check_in_elf(as,faultaddress))
+					as_load_page(as,curproc->p_vnode,faultaddress);
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 			break;
 		case IN_MEMORY:
 			break;
 		case IN_SWAP:
+<<<<<<< HEAD
 #if OPT_SWAP
 			page_paddr = alloc_upage(pt_row);
 			swap_in(page_paddr, pt_row->swap_index);
@@ -216,14 +228,24 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 			panic("swap not implemented!");
 #endif
 		break;
+=======
+			page_paddr = alloc_upage(pt_row);
+			swap_in(page_paddr, pt_row->swap_index);
+			break;
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 		default:
 			panic("Cannot resolve fault");
 	}
 
+<<<<<<< HEAD
 	KASSERT(seg_type != 0);
 	readonly = seg_type == SEGMENT_TEXT;
 
 	/* update tlb	*/
+=======
+	readonly = (seg_type != 0 ? seg_type : as_get_segment_type(as, faultaddress)) == SEGMENT_TEXT;
+	
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 	tlb_insert(basefaultaddr, pt_row->frame_index * PAGE_SIZE, readonly); 
 
 	return 0;

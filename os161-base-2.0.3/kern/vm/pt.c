@@ -133,11 +133,17 @@ void pt_empty(struct pt_entry* pt, int size){
                 paddr = ( pt[i].frame_index ) * PAGE_SIZE;
                 free_upage(paddr);
                 break;
+<<<<<<< HEAD
             case IN_SWAP:
 #if OPT_SWAP       
                 swap_free(pt[i].swap_index);
 #else           
                 panic("SWAP Pages should not exists!");
+=======
+#if OPT_SWAP
+            case IN_SWAP:
+                swap_free(pt[i].swap_index);
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 #endif
                 break;
             default:
@@ -150,7 +156,10 @@ void pt_empty(struct pt_entry* pt, int size){
 struct pt_entry *
 pt_get_entry_from_paddr(struct addrspace *as, const paddr_t paddr)
 {
+<<<<<<< HEAD
     //NOT USED, maybe we should remove it?
+=======
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
     int i;
     int n;
     unsigned int frame_index;

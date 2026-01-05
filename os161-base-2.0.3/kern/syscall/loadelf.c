@@ -109,6 +109,27 @@ load_page(struct vnode *v, off_t offset, paddr_t page_paddr, size_t size)
  * change this code to not use uiomove, be sure to check for this case
  * explicitly.
  */
+<<<<<<< HEAD
+=======
+#if OPT_RUDEVM
+int
+load_page(struct vnode *v, off_t offset, paddr_t page_paddr, size_t size)
+{
+	struct iovec iov;
+    struct uio ku;
+	int result;
+
+	uio_kinit(&iov, &ku, (void *)PADDR_TO_KVADDR(page_paddr), size, offset, UIO_READ);
+    result = VOP_READ(v, &ku);
+    if (result)
+    {
+        panic("Error loading page\n");
+    }
+
+	return 0;
+}
+#else
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 static
 int
 load_segment(struct addrspace *as, struct vnode *v,
@@ -283,7 +304,24 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 		result = as_define_region(as,
 					  ph.p_vaddr, ph.p_memsz,
 					  ph.p_offset,
+<<<<<<< HEAD
 					  ph.p_filesz);
+=======
+					  ph.p_filesz,
+					  ph.p_flags & PF_R,
+					  ph.p_flags & PF_W,
+					  ph.p_flags & PF_X);
+		if (result) {
+			return result;
+		}
+	}
+
+	*entrypoint = eh.e_entry;
+
+	return 0;
+
+
+>>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 #else
 		result = as_define_region(as,
 					  ph.p_vaddr, ph.p_memsz,
