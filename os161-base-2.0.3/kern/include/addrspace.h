@@ -41,7 +41,7 @@
 #if OPT_RUDEVM
 #define SEGMENT_TEXT    1
 #define SEGMENT_DATA    2
-#define SEGMENT_STACK   3
+#define SEGMENT_STACK   3 
 #endif
 
 struct vnode;
@@ -64,9 +64,9 @@ struct addrspace {
         size_t as_npages2;
         paddr_t as_stackpbase;
 #elif OPT_RUDEVM
-        struct segment *s_text;
-        struct segment *s_data;
-        struct segment *s_stack;
+        struct segment  *as_text;
+        struct segment  *as_data;
+        struct segment  *as_stack;
 	struct pt_entry *as_ptable;
 #endif
 };
@@ -122,14 +122,7 @@ void              as_destroy(struct addrspace *);
 int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
                                    off_t elf_offset,
-<<<<<<< HEAD
                                    size_t elfsize);
-=======
-                                   size_t elfsize,
-                                   int readable,
-                                   int writeable,
-                                   int executable);
->>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 #else
 int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
@@ -146,10 +139,7 @@ int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
 int               as_define_pt(struct addrspace *as);
 int               as_get_segment_type(struct addrspace *as, vaddr_t vaddr);
 bool              as_check_in_elf(struct addrspace *as, vaddr_t vaddr);
-<<<<<<< HEAD
 int               as_load_page(struct addrspace *as,struct vnode *vnode, vaddr_t faultaddress);
-=======
->>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 #endif
 
 /*
@@ -162,12 +152,7 @@ int               as_load_page(struct addrspace *as,struct vnode *vnode, vaddr_t
 int load_elf(struct vnode *v, vaddr_t *entrypoint);
 
 #if OPT_RUDEVM
-<<<<<<< HEAD
 void load_page(struct vnode *v, off_t offset, paddr_t page_paddr,size_t size);
-=======
-int load_page(struct vnode *v, off_t offset, paddr_t page_paddr,size_t size);
-int as_load_page(struct addrspace *as,struct vnode *vnode, vaddr_t faultaddress);
->>>>>>> a0def28403f172a802ece55ea0e290c4a250368f
 #endif
 
 #endif /* _ADDRSPACE_H_ */
