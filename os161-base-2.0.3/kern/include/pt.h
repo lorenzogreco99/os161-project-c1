@@ -4,17 +4,16 @@
 #include <types.h>
 #include <addrspace.h>
 #include "opt-rudevm.h"
+#include "opt-noswap_rdonly.h"
 
 #if OPT_RUDEVM
 
 #define NOT_LOADED 0
 #define IN_MEMORY 1
 #define IN_SWAP 2
+#define IN_MEMORY_RDONLY 3
 
-//TODO REMOVE IT
-#define IS_IN_MEMORY(pt_entry) (pt_entry->pt_status==IN_MEMORY)
-#define IS_IN_SWAP(pt_entry) (pt_entry->pt_status==IN_SWAP)
-#define IS_NOT_LOADED(pt_entry) (pt_entry->pt_status==NOT_LOADED)
+
 
 struct pt_entry
 {

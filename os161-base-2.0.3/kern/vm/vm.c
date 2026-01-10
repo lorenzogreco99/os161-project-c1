@@ -16,6 +16,7 @@
 #include "syscall.h"
 #include <swapfile.h>
 #include "opt-stats.h"
+#include "opt-noswap_rdonly.h"
 
 #if OPT_STATS
 #include <vmstats.h>
@@ -193,8 +194,16 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	KASSERT(as->as_text != NULL);
 	KASSERT(as->as_ptable != NULL);
 
+	/**
+	 * If as_get_segment_type returns zero, the fault address
+	 * does not belong to a valid segment.
+	 */
+	if(!(seg_type = as_get_segment_type(as, faultaddress))){
+		kprintf("vm: got faultaddr out of range, process killed\n");
+		sys__exit(-1);
+	}
 	pt_row = pt_get_entry(as, faultaddress);
-	seg_type = as_get_segment_type(as, faultaddress);
+	readonly = seg_type == SEGMENT_TEXT;
 	switch(pt_row->pt_status)
 	{
 		case NOT_LOADED:
@@ -207,7 +216,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 			 * as the pt_entry will be used to retrieve the
 			 * physical address of the page
 			 */
-			pt_set_entry(pt_row,page_paddr,0,IN_MEMORY);
+			pt_set_entry(pt_row,page_paddr,0, (OPT_NOSWAP_RDONLY && readonly) ? IN_MEMORY_RDONLY : IN_MEMORY); 	
 
 			/*	load the page if needed 	*/
 			if(seg_type != SEGMENT_STACK && as_check_in_elf(as,faultaddress))
@@ -221,6 +230,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 			}
 #endif
 			break;
+		case IN_MEMORY_RDONLY:
 		case IN_MEMORY:
 #if OPT_STATS
     		vmstats_hit(VMSTAT_TLB_RELOAD);
@@ -235,7 +245,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 			swap_in(page_paddr, pt_row->pt_swap_index);
 
 			/* update page table	*/
-			pt_set_entry(pt_row,page_paddr,0,IN_MEMORY);
+			
+			pt_set_entry(pt_row,page_paddr,0, (OPT_NOSWAP_RDONLY && readonly) ? IN_MEMORY_RDONLY : IN_MEMORY); 
 
 #else
 			panic("swap not implemented!");
@@ -246,7 +257,6 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	}
 
 	KASSERT(seg_type != 0);
-	readonly = seg_type == SEGMENT_TEXT;
 
 	/* update tlb	*/
 	tlb_insert(basefaultaddr, pt_row->pt_frame_index * PAGE_SIZE, readonly); 

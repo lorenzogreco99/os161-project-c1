@@ -8,8 +8,9 @@
 
 struct coremap_entry
 {
-    unsigned int        cm_used : 1;
-    unsigned int        cm_allocsize : 16;      //TODO should we change it? 
+    unsigned char       cm_used;
+    unsigned long       cm_allocsize;      
+    unsigned char       cm_lock;
     struct pt_entry     *cm_ptentry;            /*  page table entry of the page living 
                                                     in this frame, NULL if kernel page  */
 };
