@@ -33,7 +33,6 @@ void swap_bootstrap(void)
     {
         panic("Cannot open SWAPFILE");
     }
-
     swapmap = bitmap_create(SWAPFILE_NPAGES);
 }
 
