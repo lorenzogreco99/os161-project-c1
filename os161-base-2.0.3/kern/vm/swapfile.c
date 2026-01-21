@@ -28,7 +28,7 @@ void swap_bootstrap(void)
 
     KASSERT(SWAPFILE_SIZE % PAGE_SIZE == 0);
 
-    err = vfs_open(swapfile_name, O_RDWR | O_CREAT, 0, &swapfile);
+    err = vfs_open(swapfile_name, O_RDWR | O_CREAT | O_TRUNC, 0, &swapfile);
     if (err)
     {
         panic("Cannot open SWAPFILE");
@@ -36,6 +36,20 @@ void swap_bootstrap(void)
 
     swapmap = bitmap_create(SWAPFILE_NPAGES);
 }
+
+
+/**
+ * @brief deletes the swap file and frees the data
+ * structures needed
+ * 
+ */
+void swap_destroy(void)
+{
+    vfs_close(swapfile);
+    bitmap_destroy(swapmap);
+  
+}
+
 
 /**
  * @brief move a page from the swap file to memory at page_paddr 
@@ -134,5 +148,3 @@ void swap_free(unsigned int swap_index)
     bitmap_unmark(swapmap, swap_index);
     spinlock_release(&swaplock);
 }
-
-//TODO add swap destroy??

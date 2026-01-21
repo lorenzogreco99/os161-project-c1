@@ -46,7 +46,6 @@
  * only the page of the address space that belong to a segment are 
  * considered in the page table. 
  *  
- * 
  * @param as address space
  * @param vaddr virtual address
  * @return int page table index

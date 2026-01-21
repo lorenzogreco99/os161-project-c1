@@ -58,7 +58,9 @@
 #if OPT_STATS
 #include <vmstats.h>
 #endif
-
+#if OPT_SWAP
+#include <swapfile.h>
+#endif
 /*
  * These two pieces of data are maintained by the makefiles and build system.
  * buildconfig is the name of the config file the kernel was configured with.
@@ -164,7 +166,9 @@ shutdown(void)
 #if OPT_STATS
 	vmstats_print();
 #endif
-
+#if OPT_SWAP
+	swap_destroy();
+#endif
 	vfs_clearbootfs();
 	vfs_clearcurdir();
 	vfs_unmountall();

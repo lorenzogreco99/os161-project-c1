@@ -21,7 +21,7 @@ static int        coremap_swapout(int npages);
 static int        victim_index = 0;
 #endif
 static int        nRamFrames = 0; /* number of ram frames */
-static struct     coremap_entry *coremap;
+static struct     cm_entry *coremap;
 
 /**
  * @brief Initialization of the coremap, this function is called 
@@ -65,21 +65,21 @@ void coremap_bootstrap(){
 
 
   /* Allocates the coremap right in the firstfree address. */
-  coremap = (struct coremap_entry *)firstfree;
+  coremap = (struct cm_entry *)firstfree;
   
   /* 
    * Compute the size of coremap and kernel in pages in order to set 
    * the pages right after firstfree as used.
    */
-  coremap_size = sizeof(struct coremap_entry) * nRamFrames;
+  coremap_size = sizeof(struct cm_entry) * nRamFrames;
   coremap_pages = DIVROUNDUP(coremap_size, PAGE_SIZE);
   kernel_pages = firstpaddr / PAGE_SIZE;
 
   /*  Initialize the coremap. */
   for (i = 0; i < nRamFrames; i++)
   {
-    coremap[i].cm_allocsize = 0;
-    coremap[i].cm_used = 0;
+    coremap[i].cm_size_alloc = 0;
+    coremap[i].cm_free = 0;
     coremap[i].cm_lock = 0;
     coremap[i].cm_ptentry = NULL;
   }
@@ -90,8 +90,8 @@ void coremap_bootstrap(){
    */
   for (i = 0; i < kernel_pages + coremap_pages; i++)
   {
-    coremap[i].cm_used = 1;
-    coremap[i].cm_allocsize = 1;
+    coremap[i].cm_free = 1;
+    coremap[i].cm_size_alloc = 1;
   }
 
 }
@@ -112,10 +112,10 @@ coremap_find_freeframes(int npages)
   beginning = -1;
   while (end < nRamFrames)
   {
-    if (coremap[end].cm_used == 1)
+    if (coremap[end].cm_free == 1)
     {
       beginning = -1;
-      end += coremap[end].cm_allocsize;
+      end += coremap[end].cm_size_alloc;
     }
     else // frame is free
     {
@@ -154,8 +154,8 @@ coremap_get_victim()
     /* Swap out only user pages */
     if(coremap[victim_index].cm_ptentry != NULL && !coremap[victim_index].cm_lock)
     {
-      KASSERT(coremap[victim_index].cm_used == 1);
-      KASSERT(coremap[victim_index].cm_allocsize == 1);
+      KASSERT(coremap[victim_index].cm_free == 1);
+      KASSERT(coremap[victim_index].cm_size_alloc == 1);
 
       return victim_index;
     }
@@ -248,10 +248,10 @@ coremap_getppages(int npages, struct pt_entry *ptentry)
 
   bzero((void *)PADDR_TO_KVADDR(beginning * PAGE_SIZE), PAGE_SIZE * npages);
 
-  coremap[beginning].cm_allocsize = npages;
+  coremap[beginning].cm_size_alloc = npages;
   for (i = 0; i < npages; i++)
   {
-    coremap[beginning + i].cm_used = 1;
+    coremap[beginning + i].cm_free = 1;
     coremap[beginning + i].cm_ptentry = ptentry;
   }
   spinlock_release(&cm_spinlock);
@@ -272,8 +272,8 @@ void coremap_freeppages(paddr_t addr)
   KASSERT(addr % PAGE_SIZE == 0);
 
   first = addr / PAGE_SIZE;
-  allocSize = coremap[first].cm_allocsize;
-  coremap[first].cm_allocsize = 0;
+  allocSize = coremap[first].cm_size_alloc;
+  coremap[first].cm_size_alloc = 0;
 
   KASSERT(nRamFrames > first);
   KASSERT(allocSize > 0);
@@ -281,8 +281,8 @@ void coremap_freeppages(paddr_t addr)
   spinlock_acquire(&cm_spinlock);
   for (i = 0; i < allocSize; i++)
   {
-    KASSERT(coremap[first + i].cm_used == 1);
-    coremap[first + i].cm_used = 0;
+    KASSERT(coremap[first + i].cm_free == 1);
+    coremap[first + i].cm_free = 0;
   }
   spinlock_release(&cm_spinlock);
 }
