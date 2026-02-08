@@ -34,7 +34,7 @@ Each entry stores the information needed by the kernel to correctly manage memor
 
 To locate free frames, the kernel performs a **linear scan** over the coremap. For this reason, each coremap entry includes a **flag** indicating whether the corresponding frame is free or currently allocated.
 
-While user-space pages are always allocated one at a time, the kernel may allocate multiple contiguous pages using the `kmalloc` function. Since these allocations must later be released using `kfree`, the coremap must also store the size of kernel allocations in order to correctly deallocate all contiguous frames.
+While user-space pages are always allocated one at a time, the kernel may allocate multiple contiguous pages using the `kmalloc` function. Since these allocations must later be released using `kfree`, the coremap must also store the size of kernel allocations in order to correctly deallocate all contiguous frames (`cm_allocsize`).
 
 Since this project implements a **per-process page table**, it is essential to know which process owns a given physical frame. This information is required when a frame is swapped out, as the corresponding page table entry must be updated. Instead of explicitly storing the process identifier, each coremap entry contains a **pointer** to the page table entry associated with that frame.
 
@@ -165,10 +165,11 @@ A typical example is the `sort` program, where the data segment begins at a non 
 
 For these reasons, `as_load_page` handles different cases depending on which page of the segment is being loaded.
 
-
+```c
 void load_page(struct vnode *v, off_t offset, paddr_t page_paddr, size_t size);
 
 int as_load_page(struct addrspace *as, struct vnode *vnode, vaddr_t faultaddress);
+```
 
 
 #### Case A: first page of a segment
@@ -199,48 +200,7 @@ After computing these parameters, `as_load_page` invokes `load_page`, which tran
 Control then returns to `vm_fault`, which can finally update the page table and install the correct TLB entry.
 
 
-## 4. Swap
-
-To support page replacement when physical memory is exhausted, a swap mechanism is implemented using a dedicated file named `SWAPFILE`.
-
-During system startup, a bootstrap routine opens the swap file and keeps it open for the entire lifetime of the kernel. The swap subsystem is implemented as a separate module and is invoked by the coremap, virtual memory, or page table code whenever a page needs to be swapped out to secondary storage or swapped back into memory.
-
-The size of the swap file is fixed at 9 MB. Since pages are 4096 bytes in size, this corresponds to 0x900 swap pages. Each page in the swap file can therefore be identified by an index that fits within 12 bits. Although not all possible indices are used, this representation allows some flexibility for future extensions.
-
-To make the implementation independent from a specific swap size, the number of bits used for swap indexing is defined through the `SWAP_INDEX_SIZE` constant in `swapfile.h`, which can be adjusted if the swap file size changes.
-
-### 4.1 Swap space management
-
-In order to track which portions of the swap file are currently in use, a bitmap is employed. Each bit in the bitmap corresponds to one page in the swap file: a value of 1 indicates that the page is occupied, while a value of 0 means that it is free.
-
-The bitmap is initialized at startup as follows:
-
-```c
-static struct bitmap *swapmap;
-swapmap = bitmap_create(SWAPFILE_SIZE / PAGE_SIZE);
-```
-
-When a page needs to be swapped out, the kernel searches the bitmap for a free swap page. Once an available index is found, the contents of the selected physical frame are written to the corresponding location in the swap file, and the associated bit in the bitmap is set.
-
-Conversely, during a swap-in operation, the kernel reads the page stored at a given swap index into a newly allocated physical frame and clears the corresponding bit in the bitmap, marking that swap page as free again.
-
-This approach ensures a simple and efficient management of secondary storage while maintaining a clear correspondence between physical frames and swap locations.
-
-### 4.2 Swap optimization for read-only pages
-
-After implementing the basic swap mechanism, further analysis revealed that some swap operations are unnecessary and can be avoided.
-
-In particular, swapping out read-only pages is often redundant. Pages belonging to read-only segments, such as the text segment, are already present in identical form inside the executable ELF file. Writing such pages to the swap file provides no benefit and only increases I/O overhead and swap space usage.
-
-Since demand paging is implemented and the ELF file remains open during execution, these pages can always be reloaded directly from the program binary when needed. As both the ELF file and the swap file reside on secondary storage, reading from one or the other has no inherent performance advantage.
-
-For this reason, an optimization is introduced: when a read-only page is selected as a swap victim, it is simply discarded from physical memory without being written to the swap file. If the page is accessed again, it is reloaded from the ELF file.
-
-This optimization reduces unnecessary disk writes and conserves swap space. It can be enabled or disabled at compile time using the `noswap_rdonly` kernel configuration option.
-
-
-
-## 5. Address Space
+## 4. Address Space
 
 In the original OS161 implementation, the ELF file headers explicitly describe only two segments:  
 the `.text` segment (read-only) and the `.data` segment (read/write).  
@@ -257,7 +217,7 @@ As a consequence, computing the page table index from a virtual address becomes 
 
 This approach significantly reduces memory usage at the cost of a more elaborate index computation.
 
-### 5.1 Address Space Structure
+### 4.1 Address Space Structure
 
 The address space structure stores information related to the three segments of a process and its page table.
 
@@ -272,7 +232,7 @@ struct addrspace {
 };
 ```
 
-### 5.2 Segment Structure
+### 4.2 Segment Structure
 
 Each segment is described by a dedicated structure containing the information required to locate it in the virtual address space and to correctly load its pages from the ELF file.
 
@@ -297,7 +257,7 @@ For example, uninitialized data or stack pages do not correspond to data stored 
 
 Although it would be possible to explicitly store access permissions (read-only or read/write) inside the segment structure, this was deemed unnecessary. Since the number of segments is fixed and their roles are known in advance, permissions can be inferred directly from the segment type (text, data, or stack).
 
-### 5.3 Page Table Structure
+### 4.3 Page Table Structure
 
 Each entry in the page table describes the state and location of a single virtual page.
 ```c
@@ -321,7 +281,7 @@ Originally, the page state was inferred by checking whether the frame index or s
 
 Alternative solutions were considered, such as using sentinel values or a single index field whose meaning depends on context. However, these approaches were either fragile or difficult to extend. The final design choice was therefore to include an explicit status field, simplifying the logic and improving code robustness with negligible memory overhead.
 
-### 5.4 Computing the Page Table Index from a Virtual Address
+### 4.4 Computing the Page Table Index from a Virtual Address
 
 To retrieve the correct page table entry for a given virtual address, the kernel must first determine which segment the address belongs to.
 
@@ -352,8 +312,8 @@ int as_get_segment_type(struct addrspace *as, vaddr_t vaddr) {
 ```
 
 Once the segment is identified, the offset of the virtual address within the segment is computed relative to the base page-aligned address of the segment. The page table index is then calculated by summing:
-- the number of pages in all preceding segments;
-- the page offset within the current segment.
+- the **number of pages** in all preceding segments;
+- the **page offset** within the current segment.
 
 For example, if the address belongs to the data segment, the number of text pages is added before computing the data segment offset.
 
@@ -395,6 +355,49 @@ static int pt_get_index(struct addrspace *as, vaddr_t vaddr) {
     }
 }
 ```
+
+
+
+## 5. Swap
+
+To support page replacement when physical memory is exhausted, a swap mechanism is implemented using a dedicated file named `SWAPFILE`.
+
+During system startup, a bootstrap routine opens the swap file and keeps it open for the entire lifetime of the kernel. The swap subsystem is implemented as a separate module and is invoked by the **coremap**, **virtual memory**, or **page table** code whenever a page needs to be swapped out to secondary storage or swapped back into memory.
+
+The size of the swap file is fixed at **9 MB**. Since pages are 4096 bytes in size, this corresponds to 0x900 swap pages. Each page in the swap file can therefore be identified by an index that fits within 12 bits. Although not all possible indices are used, this representation allows some flexibility for future extensions.
+
+To make the implementation independent from a specific swap size, the number of bits used for swap indexing is defined through the `SWAP_INDEX_SIZE` constant in `swapfile.h`, which can be adjusted if the swap file size changes.
+
+### 5.1 Swap space management
+
+In order to track which portions of the swap file are currently in use, a **bitmap** is employed. Each bit in the bitmap corresponds to one page in the swap file: a value of 1 indicates that the page is **occupied**, while a value of 0 means that it is **free**.
+
+The bitmap is initialized at startup as follows:
+
+```c
+static struct bitmap *swapmap;
+swapmap = bitmap_create(SWAPFILE_SIZE / PAGE_SIZE);
+```
+
+When a page needs to be swapped out, the kernel searches the bitmap for a free swap page. Once an available index is found, the contents of the selected physical frame are written to the corresponding location in the swap file, and the associated bit in the bitmap is set.
+
+Conversely, during a swap-in operation, the kernel reads the page stored at a given swap index into a newly allocated physical frame and clears the corresponding bit in the bitmap, marking that swap page as free again.
+
+This approach ensures a simple and efficient management of secondary storage while maintaining a clear correspondence between physical frames and swap locations.
+
+### 5.2 Swap optimization for read-only pages
+
+After implementing the basic swap mechanism, further analysis revealed that some swap operations are unnecessary and can be avoided.
+
+In particular, swapping out read-only pages is often redundant. Pages belonging to read-only segments, such as the text segment, are already present in identical form inside the executable ELF file. Writing such pages to the swap file provides no benefit and only increases I/O overhead and swap space usage.
+
+Since demand paging is implemented and the ELF file remains open during execution, these pages can always be reloaded directly from the program binary when needed. As both the ELF file and the swap file reside on secondary storage, reading from one or the other has no inherent performance advantage.
+
+For this reason, an optimization is introduced: when a read-only page is selected as a swap victim, it is simply discarded from physical memory without being written to the swap file. If the page is accessed again, it is reloaded from the ELF file.
+
+This optimization reduces unnecessary disk writes and conserves swap space. It can be enabled or disabled at compile time using the `noswap_rdonly` kernel configuration option.
+
+
 
 
 
@@ -445,23 +448,14 @@ switch (faulttype) {
 To correctly trigger this behavior, TLB entries must be inserted with the proper permissions.  
 This is achieved through the `tlb_insert` function, which receives a boolean parameter indicating whether the page should be marked as read-only.
 
+```c
 void tlb_insert(vaddr_t vaddr, paddr_t paddr, bool ro);
+```
 
 When `ro` is set to true, the dirty bit of the TLB entry is cleared, ensuring that any write attempt on that page will generate a `VM_FAULT_READONLY`.
 
-The TLB insertion routine also implements a round-robin replacement policy when the TLB is full.
+The TLB insertion routine also implements a **round-robin replacement policy** when the TLB is full.
 
-To verify this functionality, a small test program named `nosywrite` was created. The program attempts to write to the base address of the text segment, which is read-only.
-
-```c
-int main(void) {
-    int *invalid_pointer = (int *)0x400000;
-    *invalid_pointer = 3;
-    return 0;
-}
-```
-
-As expected, executing this program causes the process to be terminated without crashing the kernel.
 
 
 ### 6.2 Read and Write Faults
