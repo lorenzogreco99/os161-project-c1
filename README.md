@@ -16,6 +16,12 @@ The implementation includes explicit TLB management, read-only protection for te
 
 The project was developed as part of the System and Device Programming course and required working directly on kernel-level components of OS161.
 
+To build and run the kernel with the implemented virtual memory subsystem, follow these steps:
+1. navigate in kern/conf/DEMANDVM and run './config DEMANDVM'
+2. move inside the generated folder compile/DEMANDVM and run 'bmake depend' to generate the "includelinks" directory.
+3. run 'bmake' to compile the kernel.
+4. To execute the kernel one must return to the root directory and run 'sys161 kernel-DEMANDVM'
+
 
 ## 2. Paging
 
