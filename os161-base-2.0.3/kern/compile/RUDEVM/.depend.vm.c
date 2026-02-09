@@ -4,7 +4,7 @@ vm.o: ../../vm/vm.c ../../include/types.h ../../include/kern/types.h \
  opt-noasserts.h ../../include/spl.h ../../include/cpu.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
  includelinks/machine/spinlock.h ../../include/threadlist.h \
- includelinks/machine/vm.h opt-rudevm.h ../../include/proc.h \
+ includelinks/machine/vm.h opt-DEMANDVM.h ../../include/proc.h \
  ../../include/pt.h ../../include/addrspace.h opt-dumbvm.h \
  opt-noswap_rdonly.h opt-swap.h ../../include/swapfile.h opt-waitpid.h \
  ../../include/current.h includelinks/machine/current.h \

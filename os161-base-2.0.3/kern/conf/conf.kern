@@ -457,13 +457,13 @@ defoption waitpid
 defoption swap
 optfile   swap      vm/swapfile.c
 
-defoption rudevm
-optfile   rudevm    vm/vm_tlb.c
-optfile   rudevm    vm/vm.c
-optfile   rudevm    vm/coremap.c    
-optfile   rudevm    vm/pt.c
-optfile   rudevm    vm/segment.c
-# do not compile ram.c as it is not used in rudevm
+defoption DEMANDVM
+optfile   DEMANDVM    vm/vm_tlb.c
+optfile   DEMANDVM    vm/vm.c
+optfile   DEMANDVM    vm/coremap.c    
+optfile   DEMANDVM    vm/pt.c
+optfile   DEMANDVM    vm/segment.c
+# do not compile ram.c as it is not used in DEMANDVM
 
 defoption stats
 defoption noswap_rdonly

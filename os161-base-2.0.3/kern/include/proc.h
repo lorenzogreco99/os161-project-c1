@@ -38,7 +38,7 @@
 
 #include <spinlock.h>
 #include <pt.h>
-#include "opt-rudevm.h"
+#include "opt-DEMANDVM.h"
 #include "opt-waitpid.h"
 
 struct addrspace;
@@ -74,7 +74,7 @@ struct proc {
 	struct vnode *p_cwd;		/* current working directory */
 
 	/* add more material here as needed */
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 	struct vnode *p_vnode;		/* process ELF vnode */
 #endif
 

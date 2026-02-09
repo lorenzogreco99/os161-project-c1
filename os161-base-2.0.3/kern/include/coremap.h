@@ -2,9 +2,9 @@
 #define _COREMAP_H_
 
 #include <pt.h>
-#include "opt-rudevm.h"
+#include "opt-DEMANDVM.h"
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 
 struct cm_entry
 {
@@ -19,6 +19,6 @@ void        coremap_bootstrap(void);
 paddr_t     coremap_getppages(int npages, struct pt_entry *ptentry);
 void        coremap_freeppages(paddr_t addr);
 
-#endif /* OPT_RUDEVM */
+#endif /* OPT_DEMANDVM */
 
 #endif /* _COREMAP_H_ */

@@ -10,7 +10,7 @@ semfs_vnops.o: ../../fs/semfs/semfs_vnops.c ../../include/types.h \
  ../../include/threadlist.h includelinks/machine/thread.h \
  ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
  ../../include/proc.h ../../include/pt.h ../../include/addrspace.h \
- opt-dumbvm.h opt-rudevm.h opt-noswap_rdonly.h opt-swap.h \
+ opt-dumbvm.h opt-DEMANDVM.h opt-noswap_rdonly.h opt-swap.h \
  ../../include/swapfile.h opt-waitpid.h ../../include/current.h \
  includelinks/machine/current.h ../../include/vfs.h ../../include/vnode.h \
  ../../fs/semfs/semfs.h ../../include/fs.h

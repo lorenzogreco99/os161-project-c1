@@ -6,7 +6,7 @@ trap.o: ../../arch/mips/locore/trap.c ../../include/types.h \
  includelinks/mips/specialreg.h includelinks/mips/trapframe.h \
  ../../include/cpu.h ../../include/spinlock.h ../../include/hangman.h \
  opt-hangman.h includelinks/machine/spinlock.h ../../include/threadlist.h \
- includelinks/machine/vm.h opt-rudevm.h ../../include/spl.h \
+ includelinks/machine/vm.h opt-DEMANDVM.h ../../include/spl.h \
  ../../include/thread.h ../../include/array.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/current.h \

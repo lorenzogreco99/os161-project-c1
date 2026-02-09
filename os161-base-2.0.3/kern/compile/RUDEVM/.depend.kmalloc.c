@@ -3,6 +3,6 @@ kmalloc.o: ../../vm/kmalloc.c ../../include/types.h \
  includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
  opt-noasserts.h ../../include/spinlock.h ../../include/hangman.h \
  opt-hangman.h includelinks/machine/spinlock.h ../../include/vm.h \
- ../../include/pt.h ../../include/addrspace.h opt-dumbvm.h opt-rudevm.h \
+ ../../include/pt.h ../../include/addrspace.h opt-dumbvm.h opt-DEMANDVM.h \
  opt-noswap_rdonly.h opt-swap.h ../../include/swapfile.h \
  includelinks/machine/vm.h

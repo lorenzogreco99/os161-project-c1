@@ -115,7 +115,7 @@ void
 proc_destroy(struct proc *proc)
 {
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 	vfs_close(proc->p_vnode);
 #endif
 

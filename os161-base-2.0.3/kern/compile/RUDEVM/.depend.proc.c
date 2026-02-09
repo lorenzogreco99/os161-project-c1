@@ -3,7 +3,7 @@ proc.o: ../../proc/proc.c ../../include/types.h \
  includelinks/machine/types.h ../../include/spl.h ../../include/cdefs.h \
  ../../include/proc.h ../../include/spinlock.h ../../include/hangman.h \
  opt-hangman.h includelinks/machine/spinlock.h ../../include/pt.h \
- ../../include/addrspace.h opt-dumbvm.h opt-rudevm.h opt-noswap_rdonly.h \
+ ../../include/addrspace.h opt-dumbvm.h opt-DEMANDVM.h opt-noswap_rdonly.h \
  opt-swap.h ../../include/swapfile.h opt-waitpid.h \
  ../../include/current.h includelinks/machine/current.h \
  ../../include/thread.h ../../include/array.h ../../include/lib.h \

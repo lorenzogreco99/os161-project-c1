@@ -44,7 +44,7 @@
 
 #define VM_STACKPAGES    18
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 struct addrspace *
 as_create(void)
 {
@@ -385,4 +385,4 @@ int as_load_page(struct addrspace *as,struct vnode *vnode, vaddr_t faultaddress)
 	return 0;
 }
 
-#endif /* OPT_RUDEVM */
+#endif /* OPT_DEMANDVM */

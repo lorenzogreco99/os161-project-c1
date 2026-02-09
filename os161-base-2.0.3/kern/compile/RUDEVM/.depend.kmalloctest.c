@@ -7,6 +7,6 @@ kmalloctest.o: ../../test/kmalloctest.c ../../include/types.h \
  ../../include/threadlist.h includelinks/machine/thread.h \
  ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
  ../../include/synch.h ../../include/vm.h ../../include/pt.h \
- ../../include/addrspace.h opt-dumbvm.h opt-rudevm.h opt-noswap_rdonly.h \
+ ../../include/addrspace.h opt-dumbvm.h opt-DEMANDVM.h opt-noswap_rdonly.h \
  opt-swap.h ../../include/swapfile.h includelinks/machine/vm.h \
  ../../include/test.h

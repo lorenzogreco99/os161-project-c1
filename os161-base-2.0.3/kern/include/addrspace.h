@@ -36,9 +36,9 @@
 
 
 #include "opt-dumbvm.h"
-#include "opt-rudevm.h"
+#include "opt-DEMANDVM.h"
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 #define SEGMENT_TEXT    1
 #define SEGMENT_DATA    2
 #define SEGMENT_STACK   3 
@@ -63,7 +63,7 @@ struct addrspace {
         paddr_t as_pbase2;
         size_t as_npages2;
         paddr_t as_stackpbase;
-#elif OPT_RUDEVM
+#elif OPT_DEMANDVM
         struct segment  *as_text;
         struct segment  *as_data;
         struct segment  *as_stack;
@@ -118,7 +118,7 @@ void              as_activate(void);
 void              as_deactivate(void);
 void              as_destroy(struct addrspace *);
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
                                    off_t elf_offset,
@@ -135,7 +135,7 @@ int               as_prepare_load(struct addrspace *as);
 int               as_complete_load(struct addrspace *as);
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 int               as_define_pt(struct addrspace *as);
 int               as_get_segment_type(struct addrspace *as, vaddr_t vaddr);
 bool              as_check_in_elf(struct addrspace *as, vaddr_t vaddr);
@@ -151,7 +151,7 @@ int               as_load_page(struct addrspace *as,struct vnode *vnode, vaddr_t
 
 int load_elf(struct vnode *v, vaddr_t *entrypoint);
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 void load_page(struct vnode *v, off_t offset, paddr_t page_paddr,size_t size);
 #endif
 

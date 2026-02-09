@@ -1,4 +1,4 @@
-autoconf.o: ../../compile/RUDEVM/autoconf.c ../../include/types.h \
+autoconf.o: ../../compile/DEMANDVM/autoconf.c ../../include/types.h \
  ../../include/kern/types.h includelinks/kern/machine/types.h \
  includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
- opt-noasserts.h ../../compile/RUDEVM/autoconf.h
+ opt-noasserts.h ../../compile/DEMANDVM/autoconf.h

@@ -6,7 +6,7 @@ proc_syscall.o: ../../syscall/proc_syscall.c ../../include/types.h \
  opt-syscalls.h ../../include/lib.h opt-noasserts.h ../../include/proc.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
  includelinks/machine/spinlock.h ../../include/pt.h \
- ../../include/addrspace.h opt-dumbvm.h opt-rudevm.h opt-noswap_rdonly.h \
+ ../../include/addrspace.h opt-dumbvm.h opt-DEMANDVM.h opt-noswap_rdonly.h \
  opt-swap.h ../../include/swapfile.h opt-waitpid.h ../../include/thread.h \
  ../../include/array.h ../../include/threadlist.h \
  includelinks/machine/thread.h ../../include/setjmp.h \

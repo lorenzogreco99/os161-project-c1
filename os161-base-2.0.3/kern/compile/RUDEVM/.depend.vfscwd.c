@@ -6,7 +6,7 @@ vfscwd.o: ../../vfs/vfscwd.c ../../include/types.h \
  opt-noasserts.h ../../include/uio.h ../../include/kern/iovec.h \
  ../../include/proc.h ../../include/spinlock.h ../../include/hangman.h \
  opt-hangman.h includelinks/machine/spinlock.h ../../include/pt.h \
- ../../include/addrspace.h opt-dumbvm.h opt-rudevm.h opt-noswap_rdonly.h \
+ ../../include/addrspace.h opt-dumbvm.h opt-DEMANDVM.h opt-noswap_rdonly.h \
  opt-swap.h ../../include/swapfile.h opt-waitpid.h \
  ../../include/current.h includelinks/machine/current.h \
  ../../include/thread.h ../../include/array.h ../../include/threadlist.h \

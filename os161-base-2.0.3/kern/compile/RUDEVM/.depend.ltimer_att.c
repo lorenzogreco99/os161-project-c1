@@ -4,5 +4,5 @@ ltimer_att.o: ../../dev/lamebus/ltimer_att.c ../../include/types.h \
  opt-noasserts.h ../../dev/lamebus/lamebus.h ../../include/cpu.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
  includelinks/machine/spinlock.h ../../include/threadlist.h \
- includelinks/machine/vm.h opt-rudevm.h ../../dev/lamebus/ltimer.h \
+ includelinks/machine/vm.h opt-DEMANDVM.h ../../dev/lamebus/ltimer.h \
  autoconf.h

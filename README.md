@@ -107,7 +107,7 @@ This allows `vm_fault` (or helper functions called by it) to fetch missing pages
 ```c
 int runprogram(char *progname) {
     ...
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
     curproc->p_vnode = v;
 #else
     vfs_close(v);
@@ -612,7 +612,7 @@ The available options are the following:
 - **syscalls** and **waitpid**  
   These options enable basic system call support and process synchronization mechanisms. They are required for the correct operation of the kernel and must always be enabled.
 
-- **rudevm**  
+- **DEMANDVM**  
   Enables the new virtual memory subsystem implemented in this project. This option activates demand paging, per-process page tables, and software-managed TLB handling, effectively replacing the original `dumbvm` system.
 
 - **swap**  

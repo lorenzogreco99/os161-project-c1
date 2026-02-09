@@ -3,12 +3,12 @@
 
 #include <types.h>
 #include <addrspace.h>
-#include "opt-rudevm.h"
+#include "opt-DEMANDVM.h"
 #include "opt-noswap_rdonly.h"
 #include "opt-swap.h"
 #include <swapfile.h>
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 
 #define NOT_LOADED 0
 #define IN_MEMORY 1
@@ -34,6 +34,6 @@ void                pt_empty(struct pt_entry* pt, int size);
 void                pt_destroy(struct pt_entry*);
 void                pt_set_entry(struct pt_entry *pt_row, paddr_t paddr, unsigned int swap_index, unsigned char status);
 
-#endif /* OPT_RUDEVM */
+#endif /* OPT_DEMANDVM */
 
 #endif /* _PT_H_ */

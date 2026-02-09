@@ -3,7 +3,7 @@ lamebus.o: ../../dev/lamebus/lamebus.c ../../include/types.h \
  includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
  opt-noasserts.h ../../include/cpu.h ../../include/spinlock.h \
  ../../include/hangman.h opt-hangman.h includelinks/machine/spinlock.h \
- ../../include/threadlist.h includelinks/machine/vm.h opt-rudevm.h \
+ ../../include/threadlist.h includelinks/machine/vm.h opt-DEMANDVM.h \
  ../../include/membar.h includelinks/machine/membar.h \
  ../../include/current.h includelinks/machine/current.h \
  ../../include/thread.h ../../include/array.h \

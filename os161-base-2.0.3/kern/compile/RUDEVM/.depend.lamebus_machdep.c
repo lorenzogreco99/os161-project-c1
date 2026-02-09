@@ -6,7 +6,7 @@ lamebus_machdep.o: ../../arch/sys161/dev/lamebus_machdep.c \
  includelinks/mips/trapframe.h ../../include/cpu.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
  includelinks/machine/spinlock.h ../../include/threadlist.h \
- includelinks/machine/vm.h opt-rudevm.h ../../include/spl.h \
+ includelinks/machine/vm.h opt-DEMANDVM.h ../../include/spl.h \
  ../../include/clock.h ../../include/kern/time.h ../../include/thread.h \
  ../../include/array.h includelinks/machine/thread.h \
  ../../include/setjmp.h includelinks/kern/machine/setjmp.h \

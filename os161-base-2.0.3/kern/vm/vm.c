@@ -12,7 +12,7 @@
 #include <vm.h>
 #include <coremap.h>
 #include <vm_tlb.h>
-#include "opt-rudevm.h"
+#include "opt-DEMANDVM.h"
 #include "syscall.h"
 #include <swapfile.h>
 #include "opt-stats.h"
@@ -22,7 +22,7 @@
 #include <vmstats.h>
 #endif
 
-#if OPT_RUDEVM
+#if OPT_DEMANDVM
 /* under vm, always have 72k of user stack */
 /* (this must be > 64K so argument blocks of size ARG_MAX will fit) */
 
@@ -263,4 +263,4 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	return 0;
 }
-#endif /* OPT_RUDEVM */
+#endif /* OPT_DEMANDVM */

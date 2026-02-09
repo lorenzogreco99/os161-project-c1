@@ -5,7 +5,7 @@ kprintf.o: ../../lib/kprintf.c ../../include/types.h \
  opt-noasserts.h ../../include/spl.h ../../include/cpu.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
  includelinks/machine/spinlock.h ../../include/threadlist.h \
- includelinks/machine/vm.h opt-rudevm.h ../../include/thread.h \
+ includelinks/machine/vm.h opt-DEMANDVM.h ../../include/thread.h \
  ../../include/array.h includelinks/machine/thread.h \
  ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
  ../../include/current.h includelinks/machine/current.h \

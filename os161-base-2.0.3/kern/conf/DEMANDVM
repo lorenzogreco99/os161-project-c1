@@ -33,7 +33,7 @@ options sfs			# Always use the file system
 
 options syscalls
 options waitpid
-options rudevm
+options DEMANDVM
 options swap
 options stats
 options noswap_rdonly
